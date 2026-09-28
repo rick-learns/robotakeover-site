@@ -1,0 +1,2350 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Worldline Observatory</title>
+<meta name="description" content="A causal simulation of Earth's worldline from planetary formation to machine civilisation and beyond. Everything is generated from seeded state; nothing is scheduled by date.">
+<style>
+:root {
+  --bg: #05080d; --panel: #0a1018; --panel2: #0d1520; --line: #1b2a3a; --line2: #26394d;
+  --ink: #cfe3f2; --dim: #7d93a8; --faint: #4b6075;
+  --cyan: #5fd4ff; --amber: #ffb547; --violet: #b58cff; --green: #6fdc8c; --red: #ff5d6c; --white: #eaf6ff;
+  --obs: #6fdc8c; --cal: #ffb547; --spec: #b58cff;
+  --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--bg); color: var(--ink); font: 12px/1.35 var(--mono); }
+body { min-height: 100vh; }
+button, select, input { font: inherit; color: var(--ink); background: var(--panel2); border: 1px solid var(--line2); border-radius: 3px; }
+button { padding: 3px 7px; cursor: pointer; }
+button:hover { border-color: var(--cyan); }
+button.on { background: #103244; border-color: var(--cyan); color: var(--white); }
+header { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; padding: 7px 12px; border-bottom: 1px solid var(--line); background: linear-gradient(#08101a, #05080d); }
+header h1 { font-size: 13px; letter-spacing: .18em; margin: 0; color: var(--white); font-weight: 600; }
+header .sub { color: var(--dim); }
+.grp { display: flex; gap: 4px; align-items: center; flex-wrap: wrap; }
+.lbl { color: var(--faint); text-transform: uppercase; letter-spacing: .12em; font-size: 10px; margin-right: 2px; }
+#zone { padding: 3px 9px; border: 1px solid currentColor; border-radius: 3px; letter-spacing: .1em; font-weight: 600; }
+main { display: grid; grid-template-columns: 250px minmax(0, 1fr) 340px; gap: 8px; padding: 8px; }
+@media (max-width: 1150px) { main { grid-template-columns: minmax(0, 1fr); } }
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 4px; padding: 8px 9px; margin-bottom: 8px; }
+.panel h2 { font-size: 10px; letter-spacing: .16em; text-transform: uppercase; color: var(--dim); margin: 0 0 6px; font-weight: 600; display: flex; justify-content: space-between; }
+#center { min-width: 0; }
+#stage { position: relative; background: radial-gradient(circle at 50% 45%, #0b1726 0%, #05080d 70%); border: 1px solid var(--line); border-radius: 4px; overflow: hidden; }
+#globe { display: block; width: 100%; height: auto; aspect-ratio: 16 / 10; }
+#banner { position: absolute; left: 50%; top: 14px; transform: translateX(-50%); padding: 8px 14px; border: 1px solid var(--spec); color: var(--white); background: rgba(20, 10, 40, .82); letter-spacing: .08em; text-align: center; display: none; max-width: 90%; }
+#stageInfo { position: absolute; left: 10px; bottom: 8px; color: var(--dim); pointer-events: none; }
+#stageTime { position: absolute; right: 10px; top: 8px; text-align: right; }
+#stageTime .big { font-size: 18px; color: var(--white); }
+#cls { position: absolute; left: 10px; top: 8px; letter-spacing: .1em; font-weight: 600; }
+#chart { display: block; width: 100%; height: 190px; margin-top: 8px; background: var(--panel); border: 1px solid var(--line); border-radius: 4px; }
+.bar { display: grid; grid-template-columns: 108px 1fr 44px; gap: 6px; align-items: center; margin: 3px 0; cursor: pointer; }
+.bar .track { height: 9px; background: #0f1a26; border: 1px solid var(--line); position: relative; }
+.bar .fill { position: absolute; left: 0; top: 0; bottom: 0; background: var(--cyan); }
+.bar .mark { position: absolute; left: 50%; top: -3px; bottom: -3px; border-left: 1px dashed var(--faint); }
+.bar .v { text-align: right; color: var(--white); }
+.kv { display: grid; grid-template-columns: 1fr auto; gap: 1px 8px; }
+.kv div:nth-child(odd) { color: var(--dim); cursor: pointer; }
+.kv div:nth-child(odd):hover { color: var(--cyan); }
+.kv div:nth-child(even) { text-align: right; color: var(--white); }
+#history { max-height: 260px; overflow: auto; }
+#history .ev { padding: 2px 0; border-bottom: 1px dotted var(--line); }
+#history .ev .t { color: var(--faint); }
+#explain .val { font-size: 16px; color: var(--white); }
+#explain .pos { color: var(--green); } #explain .neg { color: var(--red); }
+#explain table { width: 100%; border-collapse: collapse; }
+#explain td { padding: 1px 0; } #explain td:last-child { text-align: right; }
+.toggles label { display: flex; gap: 6px; align-items: center; padding: 1px 0; cursor: pointer; }
+.legend .row { display: flex; gap: 7px; align-items: center; margin: 3px 0; }
+.legend .sw { width: 14px; height: 10px; border-radius: 2px; flex: none; }
+.note { color: var(--faint); font-size: 11px; }
+#err { color: var(--red); white-space: pre-wrap; }
+.zone-obs { color: var(--obs); } .zone-cal { color: var(--cal); } .zone-spec { color: var(--spec); }
+</style>
+</head>
+<body>
+<header>
+  <h1>WORLDLINE OBSERVATORY</h1>
+  <span class="sub">causal simulation · planet → life → civilisation → machines → after</span>
+  <span id="zone" class="zone-obs">OBSERVED HISTORY</span>
+  <div class="grp"><span class="lbl">time</span>
+    <button id="bPause">❚❚ PAUSE</button><button id="bPlay">▶ PLAY</button><button id="bStep">STEP</button>
+    <button data-speed="0.25">0.25×</button><button data-speed="1">1×</button><button data-speed="10">10×</button><button data-speed="100">100×</button><button data-speed="max">MAX</button>
+  </div>
+  <div class="grp"><span class="lbl">view</span>
+    <button data-zoom="deep">DEEP TIME</button><button data-zoom="civ">CIVILIZATION</button><button data-zoom="ind">INDUSTRIAL AGE</button><button data-zoom="ai">AI TRANSITION</button><button data-zoom="post">POST-HUMAN ERA</button>
+  </div>
+  <div class="grp"><span class="lbl">seed</span><input id="seed" type="number" value="42" style="width:90px"><button id="bReset">RESTART</button></div>
+  <div class="grp"><span class="lbl">audio</span><button id="bAudio">ENABLE</button><button id="bMute">MUTE</button><input id="vol" type="range" min="0" max="1" step="0.01" value="0.5" style="width:80px" aria-label="master volume"></div>
+</header>
+<main>
+  <section id="left">
+    <div class="panel"><h2>Instruments</h2><div class="kv" id="perf"></div></div>
+    <div class="panel toggles"><h2>Counterfactual mechanisms <span class="note">restart to apply</span></h2><div id="toggles"></div>
+      <div style="margin-top:6px"><span class="lbl">AI alignment</span> <select id="align"><option value="seed">seed-drawn</option><option value="high">HIGH</option><option value="low">LOW</option></select></div>
+      <label style="margin-top:4px"><input type="checkbox" id="severe"> SEVERE ENERGY CONSTRAINT</label>
+    </div>
+    <div class="panel legend"><h2>Legend — every mark is state</h2><div id="legend"></div></div>
+    <div class="panel"><h2>What is being simulated</h2><div class="note" id="about"></div></div>
+  </section>
+  <section id="center">
+    <div id="stage">
+      <canvas id="globe" width="960" height="600" aria-label="Earth view"></canvas>
+      <div id="cls"></div>
+      <div id="stageTime"><div class="big" id="tBig"></div><div id="tSub" class="note"></div></div>
+      <div id="banner"></div>
+      <div id="stageInfo"></div>
+    </div>
+    <canvas id="chart" width="960" height="190" aria-label="Transition chart"></canvas>
+    <div class="panel" style="margin-top:8px"><h2>History (generated by detectors observing state) <span class="note" id="histCount"></span></h2><div id="history"></div></div>
+    <div id="err"></div>
+  </section>
+  <section id="right">
+    <div class="panel"><h2>AI takeover criteria <span class="note">≥50% = dashed</span></h2><div id="takeover"></div><div class="note" id="takeNote"></div></div>
+    <div class="panel"><h2>Post-takeover measures</h2><div class="kv" id="post"></div></div>
+    <div class="panel"><h2>Explain a variable <span class="note">click any name</span></h2><div id="explain"></div></div>
+    <div class="panel"><h2>World state</h2><div class="kv" id="state"></div></div>
+  </section>
+</main>
+<script id="sim-core">
+/* =====================================================================
+   WORLDLINE — simulation core.
+   Pure JavaScript, no DOM access. The Node test harness extracts and
+   runs this exact <script> block, so experiments test the shipped code.
+   ===================================================================== */
+(function (root) {
+'use strict';
+
+/* ---- deterministic transcendental functions ----
+   ECMAScript requires only + − × ÷ and sqrt to be correctly rounded. Math.exp/log/sin/cos/atan2/…
+   are "implementation-approximated" and differ in the last bit between engine versions (measured:
+   Chrome 153 vs Node 24 disagree on 5–15 % of inputs). The world rules and observers use these
+   instead. They are built only from exactly-rounded operations and exact bit manipulation, so a seed
+   gives bit-identical histories in every conforming engine. Accuracy ≈ 1–2 ulp. */
+const DM = (() => {
+  const dv = new DataView(new ArrayBuffer(8));
+  const LN2_HI = 6.93147180369123816490e-01, LN2_LO = 1.90821492927058770002e-10, INV_LN2 = 1.44269504088896338700e+00;
+  const SQRT2 = 1.4142135623730951, TWO54 = 18014398509481984;
+  // exact 2^k for integer k in [-1022, 1023]
+  const pow2 = (k) => { dv.setUint32(0, (k + 1023) << 20); dv.setUint32(4, 0); return dv.getFloat64(0); };
+  const EXP_C = [1 / 6227020800, 1 / 479001600, 1 / 39916800, 1 / 3628800, 1 / 362880, 1 / 40320, 1 / 5040, 1 / 720, 1 / 120, 1 / 24, 1 / 6, 1 / 2, 1, 1];
+  function exp(x) {
+    if (x !== x) return x;
+    if (x > 709.782712893384) return Infinity;
+    if (x < -745.1332191019412) return 0;
+    const k = Math.round(x * INV_LN2);
+    const r = (x - k * LN2_HI) - k * LN2_LO;              // |r| ≤ 0.35; k·LN2_HI is exact for |k| < 2^21
+    let p = EXP_C[0];
+    for (let i = 1; i < 14; i++) p = p * r + EXP_C[i];    // Taylor to r^13 (truncation < 1e-17)
+    if (k > 1023) return p * 2 * pow2(k - 1);
+    if (k < -1022) return p * pow2(k + 60) * pow2(-60);
+    return p * pow2(k);
+  }
+  const LOG_C = [1 / 23, 1 / 21, 1 / 19, 1 / 17, 1 / 15, 1 / 13, 1 / 11, 1 / 9, 1 / 7, 1 / 5, 1 / 3];
+  function log(x) {
+    if (x !== x || x < 0) return NaN;
+    if (x === 0) return -Infinity;
+    if (x === Infinity) return x;
+    let adj = 0;
+    if (x < 2.2250738585072014e-308) { x *= TWO54; adj = -54; }   // subnormal
+    dv.setFloat64(0, x);
+    const hi = dv.getUint32(0);
+    let e = ((hi >>> 20) & 0x7ff) - 1023 + adj;
+    dv.setUint32(0, (hi & 0x000fffff) | 0x3ff00000);          // mantissa m in [1, 2), exact
+    let m = dv.getFloat64(0);
+    if (m > SQRT2) { m *= 0.5; e += 1; }                      // m in (0.707, 1.414]
+    const s = (m - 1) / (m + 1), z = s * s;                   // log m = 2 atanh s, |s| ≤ 0.172
+    let p = LOG_C[0];
+    for (let i = 1; i < LOG_C.length; i++) p = p * z + LOG_C[i];
+    const lm = 2 * s + 2 * s * z * p;
+    return e * LN2_HI + (lm + e * LN2_LO);
+  }
+  function powi(x, n) {                                       // exponentiation by squaring, |n| ≤ 64
+    let r = 1, b = x, k = n < 0 ? -n : n;
+    while (k > 0) { if (k & 1) r *= b; b *= b; k >>= 1; }
+    return n < 0 ? 1 / r : r;
+  }
+  function pow(x, y) {
+    if (y === 0) return 1;
+    if (x !== x || y !== y) return NaN;
+    if (y === 1) return x;
+    if (y === 0.5 && x >= 0 && x !== Infinity) return Math.sqrt(x);
+    const yi = y === Math.floor(y) && y >= -64 && y <= 64;
+    if (yi) return powi(x, y);
+    if (x > 0) { if (x === Infinity) return y > 0 ? Infinity : 0; return exp(y * log(x)); }
+    if (x === 0) return y > 0 ? 0 : Infinity;
+    if (y === Math.floor(y)) { const v = exp(y * log(-x)); return y % 2 === 0 ? v : -v; }
+    return NaN;
+  }
+  // trigonometry: 3-part Cody–Waite reduction by π/2 (fdlibm constants), Taylor on |r| ≤ π/4
+  const PIO2_1 = 1.57079632673412561417e+00, PIO2_2 = 6.07710050630396597660e-11, PIO2_3 = 2.02226624871116645580e-21;
+  const INV_PIO2 = 6.36619772367581382433e-01, PIO2 = 1.5707963267948966, PI = 3.141592653589793;
+  // coefficients, highest order first: sin r = r + r·z·Σ, cos r = 1 + z·Σ (z = r², Taylor to r^19 / r^18)
+  const SIN_C = [-1 / 121645100408832000, 1 / 355687428096000, -1 / 1307674368000, 1 / 6227020800, -1 / 39916800, 1 / 362880, -1 / 5040, 1 / 120, -1 / 6];
+  const COS_C = [-1 / 6402373705728000, 1 / 20922789888000, -1 / 87178291200, 1 / 479001600, -1 / 3628800, 1 / 40320, -1 / 720, 1 / 24, -1 / 2];
+  function sinPoly(r) { const z = r * r; let p = SIN_C[0]; for (let i = 1; i < 9; i++) p = p * z + SIN_C[i]; return r + r * z * p; }
+  function cosPoly(r) { const z = r * r; let p = COS_C[0]; for (let i = 1; i < 9; i++) p = p * z + COS_C[i]; return 1 + z * p; }
+  function reduce(x) { const n = Math.round(x * INV_PIO2); return [((x - n * PIO2_1) - n * PIO2_2) - n * PIO2_3, ((n % 4) + 4) % 4]; }
+  function sin(x) {
+    if (x !== x || x === Infinity || x === -Infinity) return NaN;
+    const [r, q] = reduce(x);
+    return q === 0 ? sinPoly(r) : q === 1 ? cosPoly(r) : q === 2 ? -sinPoly(r) : -cosPoly(r);
+  }
+  function cos(x) {
+    if (x !== x || x === Infinity || x === -Infinity) return NaN;
+    const [r, q] = reduce(x);
+    return q === 0 ? cosPoly(r) : q === 1 ? -sinPoly(r) : q === 2 ? -cosPoly(r) : sinPoly(r);
+  }
+  const TAN_PI_12 = 0.2679491924311227, SQRT3 = 1.7320508075688772, PI_6 = 0.5235987755982988;
+  function atan(x) {
+    if (x !== x) return x;
+    let sign = 1; if (x < 0) { x = -x; sign = -1; }
+    let add = 0, inv = false;
+    if (x > 1) { x = 1 / x; inv = true; }
+    if (x > TAN_PI_12) { x = (x * SQRT3 - 1) / (SQRT3 + x); add = PI_6; }
+    const z = x * x; let p = 0;
+    for (let k = 31; k >= 3; k -= 2) p = (((k - 1) / 2) % 2 === 0 ? 1 : -1) / k + z * p;
+    let a = add + (x + x * z * p);
+    if (inv) a = PIO2 - a;
+    return sign * a;
+  }
+  function atan2(y, x) {
+    if (x !== x || y !== y) return NaN;
+    if (x > 0) return atan(y / x);
+    if (x < 0) return y >= 0 ? atan(y / x) + PI : atan(y / x) - PI;
+    return y > 0 ? PIO2 : y < 0 ? -PIO2 : 0;
+  }
+  const asin = (x) => (x < -1 || x > 1) ? NaN : atan2(x, Math.sqrt((1 - x) * (1 + x)));
+  const acos = (x) => (x < -1 || x > 1) ? NaN : atan2(Math.sqrt((1 - x) * (1 + x)), x);
+  return { exp, log, pow, sin, cos, atan2, asin, acos };
+})();
+
+const sq = (v) => v * v;
+
+/* ---------------- deterministic PRNG: mulberry32 ---------------- */
+function RNG(seed) { this.s = seed >>> 0; }
+RNG.prototype.next = function () {
+  const a = (this.s = (this.s + 0x6D2B79F5) >>> 0);
+  let t = Math.imul(a ^ (a >>> 15), 1 | a);
+  t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+  return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+};
+RNG.prototype.gauss = function () {
+  const u = this.next() || 1e-12, v = this.next();
+  return Math.sqrt(-2 * DM.log(u)) * DM.cos(6.283185307179586 * v);
+};
+RNG.prototype.uni = function (a, b) { return a + (b - a) * this.next(); };
+function mixSeed(seed, salt) {            // derive independent PRNG streams from one seed
+  let h = (seed ^ Math.imul(salt, 0x9E3779B1)) >>> 0;
+  h = Math.imul(h ^ (h >>> 16), 0x85EBCA6B) >>> 0;
+  h = Math.imul(h ^ (h >>> 13), 0xC2B2AE35) >>> 0;
+  return (h ^ (h >>> 16)) >>> 0;
+}
+
+/* ---------------- math helpers (pure) ---------------- */
+const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
+const sig = (z) => 1 / (1 + DM.exp(-z));
+const sat = (v, h) => v <= 0 ? 0 : 1 - DM.exp(-v / h);        // saturating 0→1
+const pos = (v) => v > 0 ? v : 0;
+const LN10 = Math.LN10;
+const SEC_PER_YR = 3.156e7;
+// Task-based aggregate of human labour H and machine labour M when machines can do
+// a fraction c of tasks (Cobb-Douglas over a task continuum; see assumptions A6).
+// Machines can also do the uncovered tasks, but only clumsily (UNCOVERED_EFF per unit):
+// callers pass H_eff = H + P.uncoveredEff·M·(1−c) so production never *requires* humans.
+const hEff = (H, M, c, eff) => H + eff * M * (1 - Math.min(c, 0.995));
+function taskAgg(H, M, c) {
+  if (c <= 1e-9 || M <= 0) return H;
+  if (c > 0.995) c = 0.995;
+  if (M * (1 - c) <= c * H) return H + M;                 // interior: humans still share automatable tasks
+  return DM.pow(H / (1 - c), 1 - c) * DM.pow(M / c, c); // corner: machines saturate automatable tasks
+}
+function taskMachineShare(H, M, c) { return (M <= 0 || c <= 0) ? 0 : Math.min(M / (H + M), Math.min(c, 0.995)); }
+function taskMPmachine(H, M, c) {   // ∂Agg/∂M
+  if (c <= 1e-9) return 0;
+  if (c > 0.995) c = 0.995;
+  if (M * (1 - c) <= c * H) return 1;
+  return c * taskAgg(H, M, c) / M;
+}
+function taskMPhuman(H, M, c) {     // ∂Agg/∂H
+  if (c <= 1e-9 || M <= 0) return 1;
+  if (c > 0.995) c = 0.995;
+  if (M * (1 - c) <= c * H) return 1;
+  return (1 - c) * taskAgg(H, M, c) / H;
+}
+
+/* ---------------- parameters ----------------
+   The main tunable constants live here so the sensitivity harness can perturb them
+   (smaller shape constants inside functional forms remain inline and are listed in RESULTS.md).
+   Units in comments. None of these is a date. */
+const DEFAULTS = {
+  // planet
+  lumRate: 7.2e-11,        // d ln(L)/dt, main-sequence brightening
+  impactTau: 1.5e8,        // yr, impactor population depletion
+  mantleTau: 4.1e9,        // yr, radiogenic heat decay
+  crustRate: 1.2e-9,       // 1/yr, continental growth per unit mantle heat
+  landMax: 0.29,
+  climSens: 4.33,          // K per e-fold of CO2 (≈3 K per doubling)
+  iceT: 275,               // K, mean temperature at which half the surface would be ice-covered
+  iceTau: 5000,            // yr
+  outgas: 1.0e-5,          // CO2 units / yr at mantle = 1
+  weath: 1.57e-6,          // weathering coefficient
+  emis: 6.1e-4,            // CO2 units per TW-yr fossil (airborne fraction included)
+  co2xTau: 1000,           // yr, anthropogenic CO2 drawdown
+  o2src: 3.3e-7,           // PAL/yr at present productivity
+  o2kw: 3.3e-7,            // 1/yr oxidative weathering
+  o2volc: 2.2e-7,          // PAL/yr at mantle = 1
+  redSink0: 40,            // PAL-equivalents of reduced crust
+  redRegen: 4e-9,          // PAL-equiv/yr from fresh crust
+  chemRate: 3e-8,          // prebiotic synthesis
+  abioHaz: 4e-9,           // 1/yr per unit prebiotic stock
+  // biosphere
+  bioRate: 1e-3,
+  vPhoto: 1.6e-9, vCx: 8e-10, vNeural: 1.2e-7, vSocial: 6e-9,
+  o2Gate: 0.18,            // PAL, half-saturation of complexity ceiling
+  extinctHaz: 1.2e-8,      // 1/yr large extinction events (scaled by impact flux + background)
+  climNoise: 0.15,         // OU amplitude of ice fluctuations
+  // humans
+  forage: 4.0e6,           // SU/yr per unit land area at full habitability
+  farmScale: 2e4,
+  birthMax: 0.042,
+  natal0: 0.05,            // initial share of the pronatalist (income-insensitive fertility) subculture
+  digitalMax: 1,           // max TFP gain from classical (non-AI) computing
+  taxK: 0.3,               // max tax on AI income (× regulation × human leverage)
+  uncoveredEff: 0.01,      // machine productivity on tasks outside their coverage (clumsy substitution)
+  welfareShare: 0.3,       // share of an aligned AI's retained income passed to humans (× alignment)
+  aiSave: 0.9,             // reinvestment rate of autonomous AI income
+  autonRate: 0.1,          // /yr: how fast autonomy follows its pressure-set target
+  delegRate: 0.1,          // /yr: how fast capital delegation follows AI management returns
+  alignSciRate: 0.002,     // /yr: alignment-science growth per unit of regulatory/incident pressure
+  aiRetain: 0.5,           // share of AI labour income autonomous AI firms retain (× autonomy)
+  noScalingFps: 20,        // FLOP/s per SU ceiling when semiconductor scaling is disabled
+  contestExp: 2,           // Tullock exponent: how decisively the larger (aligned/unaligned) coalition prevails
+  conflictK: 4,            // machine-conflict intensity scale
+  branchRate: 0.08,        // 1/yr lineage branching hazard at full deployment
+  dispersalBranching: 5,   // extra branching when computation is off-world (light-lag, independent development)
+  spaceRelief: 0.8,        // how much off-world expansion relieves Earth resource competition
+  fusionLevel: 7,          // ln(energy technology) at which fusion becomes practical
+  spaceLevel: 12,          // Σ ln(transport, energy, materials tech) at which launch becomes possible
+  deathBase: 0.0125,
+  famine: 0.25,
+  // technology
+  resDelta: 0.25,          // research productivity
+  resLambda: 0.6,          // duplication (stepping on toes)
+  resPhi: 0.3,             // ideas-get-harder (φ < 1)
+  craftShare: 1e-4,
+  diffBase: 6e-4,          // 1/yr knowledge diffusion between neighbours
+  // economy
+  cY: 5.0,                 // goods TFP scale (SU per worker-year with hand tools)
+  kappaKE: 1e11,           // SU of capital one TW of useful power can run
+  capexUseful: 1.5e10,     // SU per TW of useful mechanical capacity with pre-industrial manufacturing
+  extractLabour: 5e6,      // miner-years per TW-yr of fossil fuel before mechanised mining
+  extractCost: 2e7,        // SU per TW-yr of non-labour extraction cost
+  fossilTotal: 3000,       // TW-yr of fossil fuel on Earth
+  cleanPot: 3000,          // TW of land-based renewable potential (all land)
+  fusionPot: 3e4,          // TW of fusion capacity the land could host (heat, not fuel, is the limit)
+  safeHeatTW: 1300,        // TW of Earth-surface energy use keeping warming ≈ +2 K (habitability budget)
+  allocSharp: 2,           // investment share ∝ (net return)^allocSharp
+  // computation & AI
+  fps0: 5e-13,             // FLOP/s per SU at computation level 1
+  fpsExp: 10,              // FLOP/s per SU ∝ A_computation^fpsExp (semiconductor scaling)
+  fpsMax: 1e17,            // physical ceiling, FLOP/s per SU
+  jFlop0: 0.1,             // J/FLOP at 1 FLOP/s per SU (J/FLOP ∝ fps^-0.95, Koomey-like)
+  jFlopMin: 1e-18,         // physical floor
+  brainFlops: 1e15,
+  infFlops0: 1e17,         // FLOP/s per human-equivalent AI worker at alg = 1
+  infFlopsMin: 1e12,       // FLOP/s floor per human-equivalent worker (≈ 1/1000 of a brain)
+  qSlope: 0.5,             // research/work quality gained per decade of effective training compute beyond κ50
+  kappa50: 28,             // log10 effective training FLOP at which AI covers half of cognitive tasks
+  kappaW: 1.2,
+  algDelta: 0.9,
+  algPhi: -0.35,
+  algMax: 1e8,             // ceiling on algorithmic efficiency gains (no free lunch)
+  expCompute: 1e19,        // FLOP/s of experiment compute per 'experiment unit' at alg = 1
+  robotCost: 400,          // SU per robot worker-equivalent at mature tech
+  robotBoost: 8,           // physical work of one robot relative to an unpowered human
+  boostMax: 30,            // max productivity multiplier from mechanical power per worker
+  boostHalf: 20,           // kW of useful power per worker at half of boostMax
+  robotCostFloor: 8,       // SU: materials & energy embodied in a robot
+  oversight: 5,            // AI worker-equivalents one human can authorise
+  baseAlign: 0.6,
+  alignTax: 0.4,
+  scaleReturns: 0.15,      // lineage fitness gain per e-fold of compute share (economies of scale)
+  alignPref: 2,            // how strongly human customers/regulators favour aligned AI lineages (× human income share)
+  // space
+  launchCost0: 400,        // SU per SU delivered to orbit at tech level 1
+  orbTWperSU: 2e-10,       // TW of solar capture per SU of orbital power capital (≈ $2.5/W)
+  metalTotal: 5e15,        // SU-equivalents of capital goods buildable from accessible ores
+  replRate: 0.35,          // 1/yr maximal in-space self-replication (chips + power, before obsolescence)
+  orbMax: 1e20,            // SU of accessible off-world material
+};
+const DEFAULT_TOGGLES = {
+  fossil: true, science: true, globalComm: true, semiScaling: true, aiRecursive: true,
+  robotics: true, aiAutonomy: true, aiResources: true, resourceLimits: true,
+  severeEnergy: false, alignment: 'seed',   // 'seed' | 'high' | 'low'
+};
+
+/* ---------------- geography (seeded, generated once) ---------------- */
+const GW = 256, GH = 128, NR = 20, NL = 12;
+const DOMAINS = ['agriculture', 'energy', 'materials', 'transport', 'communication',
+  'medicine', 'computation', 'robotics', 'manufacturing'];
+const AGR = 0, ENE = 1, MAT = 2, TRA = 3, COM = 4, MED = 5, CMP = 6, ROB = 7, MAN = 8, ND = 9;
+// investment options: general capital, fossil, clean energy, compute, robots, orbital
+const IK = 0, IF = 1, IC = 2, IM = 3, IR = 4, IO = 5, NINV = 6;
+// prerequisites [dep, base, slope]: research in domain d is throttled once its level exceeds
+// what the prerequisite supports: need = base + slope·lnA_d; factor = 0.03 + 0.97·sig((lnA_dep − need)/0.4)
+// (e.g. computation cannot start before electrification; telecom needs electricity; robots need computers)
+const ENABLERS = [
+  [],                                              // agriculture
+  [[MAT, -1.0, 0.6]],                               // energy (engines need metals)
+  [[ENE, -1.0, 0.6]],                               // materials (smelting needs heat)
+  [[ENE, -0.5, 0.7], [MAT, -0.5, 0.7]],             // transport
+  [[MAT, -0.5, 0.5], [ENE, -1.5, 0.9]],             // communication (writing → printing → telegraph)
+  [[COM, -0.5, 0.6]],                               // medicine
+  [[ENE, 3.0, 0.3], [MAT, 2.5, 0.3], [MAN, 2.0, 0.3]], // computation
+  [[CMP, 2.0, 0.3], [MAN, 2.5, 0.2], [MAT, 2.0, 0.3]], // robotics
+  [[ENE, -1.0, 0.6], [MAT, -1.0, 0.6]],             // manufacturing
+];
+
+function makeGeography(seed) {
+  const g = new RNG(mixSeed(seed, 101));
+  const nb = 26 + Math.floor(g.next() * 8);
+  const blobs = [];
+  for (let i = 0; i < nb + 140; i++) {
+    const z = g.uni(-0.95, 0.95), lon = g.uni(0, 2 * Math.PI), r = Math.sqrt(1 - z * z);
+    const big = i < nb;
+    blobs.push({ x: r * DM.cos(lon), y: r * DM.sin(lon), z,
+      h: big ? g.uni(0.5, 1.0) : g.uni(-0.25, 0.25), w: big ? g.uni(0.25, 0.6) : g.uni(0.06, 0.16) });
+  }
+  const elev = new Float32Array(GW * GH), cellArea = new Float32Array(GH);
+  const xs = new Float32Array(GW * GH), ys = new Float32Array(GW * GH), zs = new Float32Array(GW * GH);
+  for (let j = 0; j < GH; j++) {
+    const lat = Math.PI * (0.5 - (j + 0.5) / GH);
+    cellArea[j] = DM.cos(lat);
+    for (let i = 0; i < GW; i++) {
+      const lon = 2 * Math.PI * (i + 0.5) / GW, k = j * GW + i;
+      const x = DM.cos(lat) * DM.cos(lon), y = DM.cos(lat) * DM.sin(lon), z = DM.sin(lat);
+      xs[k] = x; ys[k] = y; zs[k] = z;
+      let e = 0;
+      for (const b of blobs) {
+        const d2 = sq(x - b.x) + sq(y - b.y) + sq(z - b.z);
+        e += b.h * DM.exp(-d2 / (b.w * b.w));
+      }
+      elev[k] = e;
+    }
+  }
+  // sea level chosen so that the final land fraction (area-weighted) is landMax
+  const idx = Array.from({ length: GW * GH }, (_, k) => k).sort((a, b) => elev[b] - elev[a]);
+  let totA = 0; for (let j = 0; j < GH; j++) totA += cellArea[j] * GW;
+  let acc = 0, seaLevel = 0;
+  const landLevels = new Float32Array(101);   // elevation threshold for land fractions 0..landMax
+  let li = 1; landLevels[0] = elev[idx[0]] + 1;
+  for (const k of idx) {
+    acc += cellArea[Math.floor(k / GW)] / totA;
+    while (li <= 100 && acc >= DEFAULTS.landMax * li / 100) { landLevels[li++] = elev[k]; }
+    if (acc >= DEFAULTS.landMax) { seaLevel = elev[k]; break; }
+  }
+  // regions: farthest-point sampling of land cells, then nearest-centre assignment
+  const land = []; for (let k = 0; k < GW * GH; k++) if (elev[k] >= seaLevel) land.push(k);
+  const centres = [land[Math.floor(g.next() * land.length)]];
+  const dmin = new Float32Array(land.length).fill(9);
+  while (centres.length < NR) {
+    const c = centres[centres.length - 1];
+    let best = -1, bi = 0;
+    for (let n = 0; n < land.length; n++) {
+      const k = land[n];
+      const d = sq(xs[k] - xs[c]) + sq(ys[k] - ys[c]) + sq(zs[k] - zs[c]);
+      if (d < dmin[n]) dmin[n] = d;
+      const score = dmin[n] * (0.85 + 0.3 * g.next());
+      if (score > best) { best = score; bi = k; }
+    }
+    centres.push(bi);
+  }
+  const region = new Int8Array(GW * GH).fill(-1);
+  const regions = centres.map((c) => ({ cell: c, area: 0, lat: DM.asin(zs[c]), lon: DM.atan2(ys[c], xs[c]),
+    x: xs[c], y: ys[c], z: zs[c], nbr: new Float32Array(NR), sea: new Float32Array(NR) }));
+  for (const k of land) {
+    let best = 9, bi = 0;
+    for (let r = 0; r < NR; r++) {
+      const c = centres[r];
+      const d = sq(xs[k] - xs[c]) + sq(ys[k] - ys[c]) + sq(zs[k] - zs[c]);
+      if (d < best) { best = d; bi = r; }
+    }
+    region[k] = bi; regions[bi].area += cellArea[Math.floor(k / GW)];
+  }
+  let landA = 0; for (const R of regions) landA += R.area;
+  for (const R of regions) R.area /= landA;               // total land area = 1
+  // land adjacency (shared border length)
+  for (let j = 0; j < GH; j++) for (let i = 0; i < GW; i++) {
+    const k = j * GW + i, a = region[k]; if (a < 0) continue;
+    const k2 = j * GW + ((i + 1) % GW), k3 = j < GH - 1 ? k + GW : -1;
+    for (const kk of [k2, k3]) { if (kk < 0) continue; const b = region[kk];
+      if (b >= 0 && b !== a) { regions[a].nbr[b] += 1; regions[b].nbr[a] += 1; } }
+  }
+  // sea links: close centres without a land border can connect once transport exists
+  const sea = [];
+  for (let a = 0; a < NR; a++) {
+    let m = 0; for (let b = 0; b < NR; b++) m = Math.max(m, regions[a].nbr[b]);
+    for (let b = 0; b < NR; b++) {
+      regions[a].nbr[b] = m > 0 ? regions[a].nbr[b] / m : 0;
+      const d = DM.acos(clamp(regions[a].x * regions[b].x + regions[a].y * regions[b].y + regions[a].z * regions[b].z, -1, 1));
+      if (a !== b && regions[a].nbr[b] === 0 && d < 0.75) { sea.push([a, b, d]); regions[a].sea[b] = 1; }
+    }
+  }
+  // endowments (seeded; lognormal heterogeneity)
+  let fsum = 0, msum = 0;
+  for (const R of regions) {
+    R.fossilW = R.area * DM.exp(1.1 * g.gauss()); fsum += R.fossilW;
+    R.metalW = R.area * DM.exp(0.8 * g.gauss()); msum += R.metalW;
+    const lat = Math.abs(R.lat) * 180 / Math.PI;
+    R.dom = clamp(DM.pow(g.next(), 1.6) * DM.exp(-sq((lat - 28) / 22)) * (0.5 + Math.sqrt(R.area * NR) * 0.5), 0.01, 1);
+    R.hydro = clamp(0.4 + 0.6 * g.next(), 0, 1);
+    R.sin2 = sq(DM.sin(R.lat));
+  }
+  for (const R of regions) { R.fossilW /= fsum; R.metalW /= msum; }
+  return { GW, GH, elev, region, seaLevel, landLevels, regions, sea };
+}
+
+/* ---------------- state layout ---------------- */
+// kinds: 0 lin (unbounded), 1 log (positive, rates are d ln x / dt), 2 pos (≥0), 3 unit ([0,1])
+const K_LIN = 0, K_LOG = 1, K_POS = 2, K_UNIT = 3;
+function Layout() { this.n = 0; this.vars = []; this.byName = {}; }
+Layout.prototype.def = function (name, count, kind, floor, label, unit, scope) {
+  const v = { name, base: this.n, count, kind, floor: floor || 1e-9, label: label || name, unit: unit || '', scope: scope || 'global' };
+  this.vars.push(v); this.byName[name] = v; this.n += count; return v.base;
+};
+
+function buildLayout() {
+  const L = new Layout(), V = {};
+  // planet
+  V.lum = L.def('lum', 1, K_LOG, 1, 'Solar luminosity', '× present');
+  V.impact = L.def('impact', 1, K_LOG, 1, 'Impactor flux', 'rel.');
+  V.mantle = L.def('mantle', 1, K_LOG, 1, 'Mantle heat', 'rel.');
+  V.land = L.def('land', 1, K_POS, 0.01, 'Continental fraction', '');
+  V.co2n = L.def('co2n', 1, K_LOG, 1, 'Natural CO₂', '× pre-industrial');
+  V.co2x = L.def('co2x', 1, K_POS, 0.05, 'Fossil CO₂ excess', '× pre-industrial');
+  V.o2 = L.def('o2', 1, K_POS, 1e-3, 'Atmospheric O₂', 'PAL');
+  V.redSink = L.def('redSink', 1, K_POS, 1, 'Reduced-crust O₂ sink', 'PAL-eq');
+  V.ice = L.def('ice', 1, K_UNIT, 0.02, 'Ice cover', 'fraction');
+  V.iceN = L.def('iceN', 1, K_LIN, 1, 'Ice fluctuation (noise)', '');
+  V.prebio = L.def('prebio', 1, K_UNIT, 0.05, 'Prebiotic chemistry', '');
+  V.alive = L.def('alive', 1, K_LIN, 1, 'Life present', '');
+  V.bio = L.def('bio', 1, K_POS, 0.01, 'Biomass', '× present');
+  V.photo = L.def('photo', 1, K_UNIT, 0.05, 'Photosynthetic efficiency', '');
+  V.cx = L.def('cx', 1, K_POS, 0.2, 'Biological complexity', 'log cell types');
+  V.div = L.def('div', 1, K_POS, 0.1, 'Biodiversity', 'rel.');
+  V.neural = L.def('neural', 1, K_POS, 0.3, 'Neural capacity (top clade)', '');
+  V.social = L.def('social', 1, K_UNIT, 0.05, 'Cooperation propensity', '');
+  // regions
+  const R = NR;
+  V.pop = L.def('pop', R, K_LOG, 1, 'Population', 'persons', 'region');
+  V.culture = L.def('culture', R, K_POS, 0.1, 'Cumulative culture', '', 'region');
+  V.fknow = L.def('fknow', R, K_UNIT, 0.02, 'Farming know-how', '', 'region');
+  V.farm = L.def('farm', R, K_UNIT, 0.02, 'Agricultural share of food', '', 'region');
+  V.urban = L.def('urban', R, K_UNIT, 0.02, 'Urban share', '', 'region');
+  V.inst = L.def('inst', R, K_UNIT, 0.02, 'Institutional capacity', '', 'region');
+  V.sci = L.def('sci', R, K_UNIT, 0.01, 'Scientific institutions', '', 'region');
+  V.ineq = L.def('ineq', R, K_UNIT, 0.02, 'Inequality', 'Gini-like', 'region');
+  V.confl = L.def('confl', R, K_UNIT, 0.02, 'Conflict intensity', '', 'region');
+  V.natal = L.def('natal', R, K_UNIT, 0.01, 'Pronatalist share', '', 'region');
+  V.hcog = L.def('hcog', R, K_UNIT, 0.02, 'Human cognitive-work share', '', 'region');
+  V.K = L.def('K', R, K_POS, 1e7, 'Productive capital', 'SU', 'region');
+  V.fosCap = L.def('fosCap', R, K_POS, 1e-4, 'Fossil capacity', 'TW', 'region');
+  V.clnCap = L.def('clnCap', R, K_POS, 1e-4, 'Clean energy capacity', 'TW', 'region');
+  V.fosRes = L.def('fosRes', R, K_POS, 1, 'Fossil reserves', 'TW-yr', 'region');
+  V.metRes = L.def('metRes', R, K_POS, 1e12, 'Accessible metals', 'SU-equiv.', 'region');
+  V.comp = L.def('comp', R, K_POS, 1e6, 'Compute hardware', 'FLOP/s', 'region');
+  V.rob = L.def('rob', R, K_POS, 100, 'Robots', 'worker-eq', 'region');
+  V.A = L.def('A', R * ND, K_LOG, 1, 'Technology level', 'productivity ×', 'region-domain');
+  V.alloc = L.def('alloc', R * NINV, K_UNIT, 0.02, 'Investment allocation', 'share', 'region-option');
+  // AI and global economy
+  V.alg = L.def('alg', 1, K_LOG, 1, 'Algorithmic efficiency', '×');
+  V.train = L.def('train', 1, K_UNIT, 0.01, 'Training share of compute', '');
+  V.deploy = L.def('deploy', 1, K_UNIT, 0.01, 'AI deployment', '');
+  V.auton = L.def('auton', 1, K_UNIT, 0.01, 'AI autonomy', '');
+  V.reg = L.def('reg', 1, K_UNIT, 0.01, 'AI regulation', '');
+  V.incid = L.def('incid', 1, K_POS, 0.1, 'Incident memory', '');
+  V.deleg = L.def('deleg', 1, K_UNIT, 0.01, 'Capital delegated to AI', '');
+  V.omega = L.def('omega', 1, K_UNIT, 0.01, 'AI-owned capital share', '');
+  V.alignSci = L.def('alignSci', 1, K_POS, 0.05, 'Alignment science', '');
+  V.cumComp = L.def('cumComp', 1, K_POS, 1e9, 'Cumulative compute produced', 'FLOP/s');
+  V.orb = L.def('orb', 1, K_POS, 1e6, 'Off-world industry', 'SU');
+  V.fab = L.def('fab', 1, K_POS, 1e3, 'Chip fabrication capacity', 'SU/yr');
+  V.launch = L.def('launch', 1, K_POS, 1e3, 'Launch capacity', 'SU/yr to orbit');
+  // AI lineages
+  V.lAct = L.def('lAct', NL, K_LIN, 1, 'Lineage active', '', 'lineage');
+  V.lS = L.def('lS', NL, K_UNIT, 0.01, 'Lineage compute share', '', 'lineage');
+  V.lM = L.def('lM', NL, K_LIN, 0.1, 'Lineage algorithm edge', 'ln ×', 'lineage');
+  V.lA = L.def('lA', NL, K_UNIT, 0.02, 'Lineage alignment', '', 'lineage');
+  V.lTh = L.def('lTh', NL, K_LIN, 0.1, 'Lineage goal orientation', 'rad', 'lineage');
+  V.hzAcc = L.def('hzAcc', 6 + NR, K_LIN, 1, 'Integrated event hazard', '', 'process');
+  V.hzThr = L.def('hzThr', 6 + NR, K_LIN, 1, 'Event threshold (Exp(1) draw)', '', 'process');
+  return { L, V };
+}
+
+/* ---------------- flow accumulator ---------------- */
+function Flows(n) {
+  this.n = n; this.rate = new Float64Array(n); this.stiff = new Float64Array(n); this.free = new Uint8Array(n); this.scale = new Float64Array(n);
+  this.cap = 8192; this.li = new Int32Array(this.cap); this.lv = new Float64Array(this.cap); this.ll = new Array(this.cap);
+  this.len = 0; this.tauMin = Infinity; this.hazard = 0; this.record = true;
+}
+Flows.prototype.reset = function () {
+  this.rate.fill(0); this.stiff.fill(0); this.free.fill(0); this.scale.fill(0); this.len = 0; this.tauMin = Infinity; this.hazard = 0;
+};
+Flows.prototype.add = function (base, i, v, label) {
+  if (v === 0) return;
+  if (!(v - v === 0)) throw new Error('non-finite flow "' + label + '" at index ' + (base + i) + ': ' + v);
+  const k = base + i; this.rate[k] += v;
+  if (this.record) {
+    if (this.len === this.cap) { this.cap *= 2; const a = new Int32Array(this.cap), b = new Float64Array(this.cap);
+      a.set(this.li); b.set(this.lv); this.li = a; this.lv = b; }
+    this.li[this.len] = k; this.lv[this.len] = v; this.ll[this.len] = label; this.len++;
+  }
+};
+Flows.prototype.stiffen = function (base, i, k) { if (k > 0 && k - k === 0) this.stiff[base + i] += k; };
+// quasi-steady variable: tracks its (stiff) equilibrium; accuracy of its transient does not limit dt
+Flows.prototype.quasiSteady = function (base, i) { this.free[base + i] = 1; };
+// accuracy scale: a quantity that is tiny relative to its world total need not be resolved to 2 %
+Flows.prototype.accuracyScale = function (base, i, v) { if (v > this.scale[base + i]) this.scale[base + i] = v; };
+Flows.prototype.tau = function (t) { if (t < this.tauMin) this.tauMin = t; };
+Flows.prototype.haz = function (h) { if (h > 0) this.hazard += h; };
+
+// =====================================================================
+// === WORLD RULES ===
+// Everything that changes simulation state lives between these markers.
+// Rules read the state vector x and write *rates* through F.add(...).
+// They never read time, dates, frame counters or labels. Stochastic
+// events (last function) draw from the seeded PRNG only.
+// =====================================================================
+
+function worldRules(S) {
+  const { x, V, D, P, T, G, F } = S;
+  const people = humanPrecompute(x, V, D, P, T, G);
+  planetAndBiosphere(x, V, D, P, T, G, F);
+  aiSupply(x, V, D, P, T, G, F);
+  economy(x, V, D, P, T, G, F, people);
+  technology(x, V, D, P, T, G, F);
+  aiDynamics(x, V, D, P, T, G, F);
+}
+
+/* ---- planet & biosphere (global) ---- */
+function planetAndBiosphere(x, V, D, P, T, G, F) {
+  const lum = x[V.lum], imp = x[V.impact], man = x[V.mantle], land = x[V.land];
+  const co2 = x[V.co2n] + x[V.co2x], o2 = x[V.o2], ice = x[V.ice], alive = x[V.alive];
+  F.add(V.lum, 0, P.lumRate, 'stellar brightening');
+  F.add(V.impact, 0, -1 / P.impactTau, 'impactor population depletion');
+  F.add(V.mantle, 0, -1 / P.mantleTau, 'radiogenic heat decay');
+  F.add(V.land, 0, P.crustRate * man * pos(P.landMax - land), 'crust differentiation');
+
+  // energy balance (algebraic): luminosity, ice albedo, greenhouse, impacts, waste heat
+  // Slow cycles (ice sheets, weathering, biomass) respond to the mean climate `tMean`;
+  // the stochastic glacial excursion (iceN, an OU process) only enters `temp`, the
+  // temperature experienced by organisms and people.
+  const sens = 0.1 + 3 * ice * (1 - ice);
+  const iceEff = clamp(ice + x[V.iceN] * sens, 0, 1);
+  // anthropogenic/machine waste heat: radiative balance, ≈0.77 K per W/m² for small fluxes, bounded for large
+  const heatFlux = D.earthTW * 1e12 / 5.1e14;
+  const withHeat = (T0) => DM.pow(T0 * T0 * T0 * T0 + heatFlux / (5.67e-8 * 0.24), 0.25);
+  const tOf = (ic) => withHeat(255 * DM.pow(lum * (1 - (0.29 + 0.33 * ic)) / 0.71, 0.25) + 33 + P.climSens * DM.log(co2) + 1500 * DM.pow(imp, 6));
+  const tMean = tOf(ice), temp = tOf(iceEff);
+  const water = sig((373 - tMean) / 5);
+  D.temp = temp; D.tMean = tMean; D.water = water; D.wasteK = heatFlux > 0 ? tMean - DM.pow(Math.max(DM.pow(tMean, 4) - heatFlux / (5.67e-8 * 0.24), 1), 0.25) : 0; D.iceEff = iceEff; D.co2 = co2;
+
+  // sigmoid ice response: small ice caps are stable (loop gain < 1), large ice extent runs away (snowball)
+  const iceEq = sig((P.iceT - tMean) / 6) * water;
+  F.add(V.ice, 0, (iceEq - ice) / P.iceTau, 'ice-albedo adjustment'); F.stiffen(V.ice, 0, 1 / P.iceTau);
+  // climate instability (K): current glacial excursion; the OU process itself carries ~20 kyr memory
+  D.climVar = Math.abs(x[V.iceN]) * sens * 40;
+  D.climVarMean = P.climNoise * 0.8 * sens * 40;   // expected level, used for evolutionary rates
+  if (D.maxFknow > 0.02) F.tau(2000);  // resolve millennial climate once people experiment with farming
+
+  // carbon cycle: outgassing vs temperature-dependent silicate weathering (thermostat)
+  const landBio = D.landNPP || 0;
+  const Vout = P.outgas * man;
+  const Wt = P.weath * Math.sqrt(x[V.co2n]) * DM.exp(Math.min(tMean - 288, 60) / 13) * (0.3 + 0.7 * land / 0.29) * (1 - 0.9 * ice) * (1 + 1.5 * landBio) * water;
+  D.weathering = Wt;
+  F.add(V.co2n, 0, Vout / x[V.co2n], 'volcanic outgassing');
+  F.add(V.co2n, 0, -Wt / x[V.co2n] * sat(x[V.co2n], 0.05), 'silicate weathering');
+  F.stiffen(V.co2n, 0, 0.83 * Wt / x[V.co2n]);
+  F.add(V.co2x, 0, P.emis * D.fossilTW, 'fossil combustion');
+  F.add(V.co2x, 0, -x[V.co2x] / P.co2xTau, 'ocean & rock uptake'); F.stiffen(V.co2x, 0, 1 / P.co2xTau);
+
+  // oxygen: burial of photosynthetic carbon vs volcanic gases, reduced crust and weathering
+  const npp = x[V.bio];
+  const src = P.o2src * npp * x[V.photo] * alive;
+  const rs = x[V.redSink];
+  const crustSink = src * rs / (rs + 5);
+  const volcSink = P.o2volc * DM.pow(man, 1.5) * o2 / (o2 + 0.002);
+  F.add(V.o2, 0, src, 'oxygenic photosynthesis');
+  F.add(V.o2, 0, -crustSink, 'oxidation of reduced crust');
+  F.add(V.o2, 0, -volcSink, 'volcanic reducing gases');
+  F.add(V.o2, 0, -P.o2kw * o2, 'oxidative weathering');
+  F.stiffen(V.o2, 0, P.o2kw + P.o2volc * DM.pow(man, 1.5) / (o2 + 0.002));
+  F.add(V.redSink, 0, -crustSink, 'oxidation of reduced crust');
+  F.add(V.redSink, 0, P.redRegen * man, 'fresh volcanic crust');
+
+  // prebiotic chemistry (only before life; afterwards life consumes it)
+  F.add(V.prebio, 0, P.chemRate * water * (0.4 + man) * (1 - imp) * (1 - alive), 'prebiotic synthesis');
+  F.add(V.prebio, 0, -x[V.prebio] * 2e-8 * (1 + 20 * alive), 'hydrolysis & consumption'); F.stiffen(V.prebio, 0, 2e-8 * (1 + 20 * alive));
+  F.haz(P.abioHaz * x[V.prebio] * (1 - alive));
+
+  // biosphere carrying capacity: sunlight × photosynthetic efficiency × nutrients × habitability
+  const hab = DM.exp(-sq((tMean - 292) / 22));
+  const nutr = clamp(Math.sqrt(Wt / 3.3e-6), 0.05, 2);
+  const landAdapt = sig((x[V.cx] - 2.6) / 0.35), uv = o2 / (o2 + 0.05);
+  const oceanNPP = 0.5 * (0.15 + 0.85 * x[V.photo]) * nutr * hab * (1 - 0.9 * ice) * lum;
+  const landNPP = 0.5 * landAdapt * uv * (land / 0.29) * hab * (1 - 0.9 * ice) * lum * Math.sqrt(nutr) * (1 - D.landUse);
+  D.landNPP = alive * landNPP; D.oceanNPP = alive * oceanNPP;
+  const cap = alive * (oceanNPP + landNPP);
+  F.add(V.bio, 0, P.bioRate * (cap - x[V.bio]), 'growth toward ecological capacity'); F.stiffen(V.bio, 0, P.bioRate);
+
+  // evolution: trait change scales with mutation supply (biomass) and environmental variability
+  const evo = alive * DM.pow(x[V.bio] + 0.02, 0.3) * (1 + 0.05 * D.climVarMean);
+  const cx = x[V.cx], cxMax = 0.4 + 5.6 * o2 / (o2 + P.o2Gate);
+  D.cxMax = cxMax;
+  F.add(V.photo, 0, P.vPhoto * evo * (1 - x[V.photo]), 'selection for photosynthesis');
+  if (cx < cxMax) F.add(V.cx, 0, P.vCx * evo * (cxMax - cx), 'selection for complexity');
+  else F.add(V.cx, 0, -1e-8 * (cx - cxMax), 'oxygen limitation');
+  const Dmax = alive * Math.sqrt(x[V.bio]) * DM.pow(1 + cx, 1.5) * (0.5 + land / 0.29) * hab;
+  F.add(V.div, 0, (Dmax - x[V.div]) / 2e7, 'adaptive radiation'); F.stiffen(V.div, 0, 1 / 2e7);
+  const selection = Math.sqrt(x[V.div] / 20) * (0.5 + x[V.social]) * pos(cx - 2.8) * o2 / (o2 + 0.3);
+  F.add(V.neural, 0, P.vNeural * evo * selection * pos(1 - x[V.neural] / 8), 'selection for cognition (vs metabolic cost of brains)');
+  F.add(V.social, 0, P.vSocial * evo * (x[V.neural] / 6) * (1 - x[V.social]), 'selection for cooperation');
+  D.hab = hab; D.evo = evo;
+}
+
+/* ---- per-region precomputation shared by economy & AI ---- */
+function humanPrecompute(x, V, D, P, T, G) {
+  let popTot = 0, mc = 0, mf = 0;
+  for (let r = 0; r < NR; r++) { popTot += x[V.pop + r]; mc = Math.max(mc, x[V.culture + r]); mf = Math.max(mf, x[V.fknow + r]); }
+  D.popTot = popTot; D.maxCulture = mc; D.maxFknow = mf;
+  return popTot;
+}
+
+/* ---- AI supply side: capability from compute × algorithms (per lineage) ---- */
+function aiSupply(x, V, D, P, T, G, F) {
+  // orbital compute: each FLOP/s in orbit needs chips (1/fps SU) and solar/radiator capacity
+  const orbCostPerFlop = (D.fps > 0 ? 1 / D.fps : Infinity) + D.jFlop * 1e-12 / (P.orbTWperSU * (T.severeEnergy ? 0.5 : 1));
+  let Ctot = x[V.orb] * 0.9 / orbCostPerFlop;
+  D.orbCostPerFlop = orbCostPerFlop;
+  D.orbCompute = Ctot;
+  for (let r = 0; r < NR; r++) Ctot += x[V.comp + r] * D.machineHeat * D.util[r];
+  D.Ctot = Ctot;
+  const trainFlop = x[V.train] * Ctot * 7.9e6 * x[V.alg];   // effective FLOP of a quarter-year run, all lineages
+  let kMax = 0, sLead = 0, iLead = 0, act = 0;
+  for (let i = 0; i < NL; i++) {
+    if (x[V.lAct + i] < 0.5) { D.lKappa[i] = 0; continue; }
+    act++;
+    const eff = trainFlop * x[V.lS + i] * DM.exp(x[V.lM + i]);
+    const k = eff > 1 ? DM.log(eff) / LN10 : 0;
+    D.lKappa[i] = k;
+    if (k > kMax) { kMax = k; sLead = x[V.lS + i]; iLead = i; }
+  }
+  D.kappa = kMax; D.lead = iLead; D.activeLineages = act;
+  D.tau = Ctot > 0 ? sig((kMax - P.kappa50) / P.kappaW) : 0;            // cognitive task coverage
+  D.q = 1 + P.qSlope * pos(kMax - P.kappa50);                           // quality beyond human level: log-returns to compute (A1)
+  D.rel = sig((kMax - P.kappa50 + 1.5) / 0.8);                           // reliability
+  // inference: human-equivalent AI workers running on non-training compute
+  D.infFlops = P.infFlops0 / DM.pow(x[V.alg], 0.7) + P.infFlopsMin;   // algorithms cannot shrink inference below a floor
+  D.M = (1 - x[V.train]) * 0.9 * x[V.deploy] * Ctot * D.q / D.infFlops;
+}
+
+/* ---- economy: food, labour, production, distribution, investment (per region) ---- */
+function economy(x, V, D, P, T, G, F, popTot) {
+  const tg = T;
+  const cogClade = sig((x[V.neural] - 3.5) / 0.6);
+  const landAdapt = sig((x[V.cx] - 2.6) / 0.35);
+  const bioF = Math.min(1.5, x[V.bio]);
+  // global communication integration (0..1) from average communication technology
+  let lnComAvg = 0, lnTraAvg = 0, wsum = 0;
+  for (let r = 0; r < NR; r++) { const w = x[V.pop + r]; wsum += w; lnComAvg += w * DM.log(x[V.A + r * ND + COM]); lnTraAvg += w * DM.log(x[V.A + r * ND + TRA]); }
+  lnComAvg /= wsum; lnTraAvg /= wsum;
+  let gcomm = 1 - DM.exp(-sq(lnComAvg / 3.5));
+  if (!tg.globalComm) gcomm = Math.min(gcomm, 0.05);
+  D.gcomm = gcomm;
+  const tau = D.tau, M = D.M, auton = x[V.auton], omega = x[V.omega], deleg = x[V.deleg];
+  const alg = x[V.alg], deploy = x[V.deploy];
+  const severe = tg.severeEnergy;
+  // global quantities needed before the region loop
+  let cogBill = 0;
+  for (let r = 0; r < NR; r++) cogBill += D.cogBill[r];
+  // aggregates
+  let Ysum = 0, humInc = 0, aiInc = 0, wageBill = 0, earthTW = 0, fossilTW = 0, cleanTW = 0, landUseW = 0;
+  let cogInc = 0, cogM = 0, physInc = 0, physM = 0, resH = 0, resAI = 0, invTot = 0, invAI = 0, Kv = 0;
+  let fabDemand = 0, transSum = 0, humCapSum = 0;
+  let machineTW = 0, humanTW = 0, robTot = 0, Hcog = 0, Hphys = 0, researchers = 0, urbanPop = 0;
+  const aiResFrac = D.aiResFrac;
+  const meanAlign = D.meanAlign;
+  // AI investment pool (from previous step's AI income) is spread in proportion to output
+  const aiPool = D.aiInvest;
+  let Yprev = 0; for (let r = 0; r < NR; r++) Yprev += D.Y[r];
+
+  for (let r = 0; r < NR; r++) {
+    const R = G.regions[r], a = r * ND + V.A;
+    const pop = x[V.pop + r], lnA = (d) => DM.log(x[a + d]);
+    const Tr = D.temp + 12 - 36 * R.sin2;
+    const culture = x[V.culture + r];
+    // an economy (production, research, institutions) exists only where people carry cumulative culture
+    const machinesHere = x[V.rob + r] + x[V.comp + r] * 1e-12 + x[V.K + r] * 1e-6 > 1e4;
+    D.active[r] = (pop > 100 && (culture > 3 || x[V.fknow + r] > 0.05)) || machinesHere ? 1 : 0;
+    const habit = DM.exp(-sq((Tr - 287) / 13));
+    D.Tr[r] = Tr;
+    // ---- land use ----
+    const farmLand = Math.min(0.6, D.farmLandR[r]), machLand = D.machLandR[r];
+    const natFrac = Math.max(0.05, 1 - farmLand - machLand - 0.03 * x[V.urban + r]);
+    D.natFrac[r] = natFrac;
+    landUseW += R.area * (1 - natFrac);
+    // ---- climate damage (quadratic in distance from regional optimum; waste heat included) ----
+    const dT = D.temp - 288;                 // anomaly from the climate agriculture is adapted to
+    const climDmg = DM.exp(-0.004 * dT * dT);
+    // ---- food ----
+    const forCap = P.forage * R.area * habit * bioF * natFrac * landAdapt * cogClade * (1 + 0.5 * DM.log(1 + culture)) * (0.6 + 0.4 * x[V.social]);
+    const stab = DM.exp(-D.climVar / 4);
+    const nmKW = D.nmKW[r];
+    const mech = DM.pow(1 + nmKW, 0.5);                       // synthetic fertiliser & irrigation need energy
+    const farmBoost = D.boost[r] > 1 ? D.boost[r] : 1;          // tractors: same power per worker as industry (last step)
+    const agriTech = 1 + 9 * sat(lnA(AGR), 3);                  // yields saturate at a photosynthetic ceiling
+    const arable = R.area * habit * 0.4;
+    // agronomic science supersedes traditional know-how and buffers climate swings (irrigation, storage, breeding)
+    const sciAg = sat(lnA(AGR) - 1.5, 1.5);
+    const fkEff = 1 - (1 - x[V.fknow + r]) * (1 - sciAg);
+    const stabEff = stab + (1 - stab) * sciAg;
+    const farmTFP = DM.pow(fkEff, 1.5) * (0.3 + 0.7 * R.dom) * (0.3 + 0.7 * stabEff) * agriTech * mech * climDmg;
+    const phi = x[V.farm + r];
+    const W = 0.5 * pop;
+    // controlled-environment agriculture: food from electricity + advanced agronomy, no land
+    // (≈10 kW-yr of useful power per subsistence unit; up to 5% of last step's useful power)
+    const synthFood = 0.05 * (D.UphysPrev[r] || 0) * 1e8 * sat(lnA(AGR) - 4, 1) * sig((lnA(ENE) - 3.2) / 0.5);
+    const foodAt = (L) => synthFood + forCap * (1 - DM.exp(-3 * (1 - phi) * L / Math.max(forCap, 1e-9))) + P.farmScale * farmTFP * DM.pow(arable, 0.5) * DM.pow(phi * L * farmBoost, 0.5);
+    const incPrev = D.incPC[r];
+    const need = pop * (1.1 + 0.05 * DM.log(1 + pos(incPrev - 1)));
+    // labour needed to meet food need (if feasible) ...
+    let Lneed;
+    const Fmax = foodAt(0.95 * W);
+    if (Fmax <= need) Lneed = 0.95 * W;
+    else { let lo = 0, hi = 0.95 * W; for (let it = 0; it < 22; it++) { const mid = 0.5 * (lo + hi); if (foodAt(mid) < need) lo = mid; else hi = mid; } Lneed = hi; }
+    // ... but under scarcity labour moves only part-way from the Engel-curve allocation, because
+    // the non-food sector is sustained by the demand of those with income (landlords, states, towns)
+    const engel = phi > 0.05 ? clamp(0.85 * DM.pow(1.5 / Math.max(D.incPC[r], 1.5), 0.7), 0.03, 0.85) : 0.95;
+    const LE = engel * W;
+    const Lfood = Lneed <= LE ? Lneed : LE + 0.5 * (Lneed - LE);
+    const food = Math.min(foodAt(Lfood), need);
+    const f = food / Math.max(pop, 1) / 1.1;     // food adequacy (1 = full need)
+    D.foodAdequacy[r] = f;
+    // marginal yields for the forage-vs-farm choice
+    const yFor = forCap > 0 ? 3 * DM.exp(-3 * (1 - phi) * Lfood / Math.max(forCap, 1e-9)) : 0;
+    const yFarm = 0.5 * P.farmScale * farmTFP * DM.pow(arable, 0.5) * Math.sqrt(farmBoost) * DM.pow(Math.max(phi * Lfood, 0.01 * Math.max(Lfood, 1)), -0.5);
+    D.farmLandR[r] = arable / R.area * sat(phi * Lfood, 1e5 * R.area) * sat(phi, 0.3);
+    // cumulative culture: social-learning fidelity × population vs forgetting (A28)
+    const fid = sig((x[V.neural] - 6) / 0.3) * x[V.social];
+    F.add(V.culture, r, 2.5e-5 * fid * Math.sqrt(pop / 1e5) * (1 + 0.1 * culture), 'social learning');
+    F.add(V.culture, r, -2e-5 * culture * (1 - 0.95 * fid), 'forgetting'); F.stiffen(V.culture, r, 2e-5 * (1 - 0.95 * fid));
+    let cDiff = 0; for (let j = 0; j < NR; j++) { const w = R.nbr[j]; if (w > 0) cDiff += w * pos(x[V.culture + j] - culture); }
+    if (cDiff > 0) F.add(V.culture, r, 2e-4 * cDiff * sat(pop, 1e4), 'migration & contact');
+    if (!D.active[r]) {
+      // pre-cultural clade: demography only, no economy
+      const b0 = P.birthMax * Math.min(1, 0.4 + 0.6 * f), d0 = P.deathBase + 0.025, fam = P.famine * pos(1 - f);
+      F.add(V.pop, r, b0, 'births'); F.add(V.pop, r, -d0, 'baseline mortality'); F.add(V.pop, r, -fam, 'famine');
+      F.stiffen(V.pop, r, P.famine * Math.min(f, 1.5) * 0.6 + 0.002);
+      F.quasiSteady(V.pop, r);
+      D.Y[r] = D.Yg[r] = D.humIncR[r] = D.incPC[r] = D.cogBill[r] = D.D1r[r] = D.D5r[r] = D.Lnf[r] = D.Rh[r] = D.Hc[r] = D.Hp[r] = D.Mc[r] = 0;
+      D.eTW[r] = D.fosTWr[r] = D.clnTWr[r] = D.machTWr[r] = D.nmKW[r] = D.invOrb[r] = D.invM[r] = D.epiHaz[r] = 0; D.muscleKW[r] = 0.1;
+      D.births[r] = b0; D.deaths[r] = d0 + fam; D.s[r] = 0.15;
+      continue;
+    }
+
+    // ---- non-food labour: research, cognitive and physical goods work ----
+    const Lnf = Math.max(0, W - Lfood);
+    const sci = x[V.sci + r];
+    const rsh = 0.0004 + 0.03 * DM.pow(sci, 1.3);
+    const Rh = Lnf * rsh;
+    const G_ = Lnf - Rh;
+    const hc = x[V.hcog + r];
+    const Hc = G_ * hc + 1e-9, Hp = G_ * (1 - hc) + 1e-9;
+    // economic complexity: cognitive share of goods work rises with communication & manufacturing
+    const s = 0.15 + 0.45 * sig(lnA(COM) + lnA(MAN) + lnA(CMP) * 0.5 - 6);
+    // ---- energy ----
+    const fire = sat(culture, 1);
+    const muscleTW = pop * (1.2e-10 + 1e-10 * phi);             // human + draught-animal power
+    const bioTW = pop * 2.5e-10 * Math.min(1, natFrac * 2) * fire; // wood & dung, mostly heat
+    const res0 = P.fossilTotal * R.fossilW * (tg.fossil ? 1 : 0) * (severe ? 0.25 : 1);
+    const fres = x[V.fosRes + r];
+    const avail = tg.resourceLimits ? fres / (fres + 0.02 * res0 + 1e-9) : (res0 > 0 ? 1 : 0);
+    // fields decline: extraction cannot exceed ~1/30 of the remaining reserve per year
+    const fosMaxTW = (tg.resourceLimits ? fres : res0) / 30;
+    const fosTW = Math.min(x[V.fosCap + r] * avail, fosMaxTW);
+    const fosUtil = x[V.fosCap + r] > 0 ? fosTW / x[V.fosCap + r] : avail;
+    const clnTW = x[V.clnCap + r];
+    const elec = sig((lnA(ENE) - 3.2) / 0.5);
+    // fraction of fossil energy turned into mechanical work: ~0 without engines (heat only)
+    const effF = 0.35 * sat(lnA(ENE) - 1.2, 1.5) * (severe ? 0.5 : 1);
+    const cleanUse = (0.25 + 0.6 * elec) * (severe ? 0.5 : 1);   // water/wind mills → electricity
+    // machine energy demand: compute and robots draw from the same supply
+    const compTW = x[V.comp + r] * D.jFlopEarth * 1e-12;
+    const robTW = x[V.rob + r] * 1e-9;
+    const machTW = compTW + robTW;
+    const Unm = bioTW * 0.02 + fosTW * effF + clnTW * cleanUse;  // useful non-muscle work (TW)
+    // machines cannot draw more power than is generated: beyond that they sit idle
+    const util = machTW > 0 ? Math.min(1, 0.95 * Unm / machTW) : 1;
+    D.util[r] = util;
+    const Uphys = Math.max(Unm - machTW * util, 0);
+    D.UphysPrev[r] = Uphys;
+    const eTot = muscleTW + bioTW + fosTW + clnTW;
+    earthTW += eTot; fossilTW += fosTW; cleanTW += clnTW; machineTW += machTW; humanTW += eTot - machTW;
+    D.eTW[r] = eTot; D.fosTWr[r] = fosTW; D.clnTWr[r] = clnTW; D.machTWr[r] = machTW;
+    D.nmKW[r] = (fosTW + clnTW) / Math.max(pop, 1) * 1e9;     // non-muscle primary kW per person
+    D.unmKW[r] = (fosTW * effF + clnTW * cleanUse * elec) / Math.max(pop, 1) * 1e9;   // engine & electric work, kW per person (mills excluded)
+    D.muscleKW[r] = muscleTW / Math.max(pop, 1) * 1e9;
+    // ---- machines & labour aggregates ----
+    // physical work: each worker's output rises with the mechanical power at their disposal
+    const uw = Uphys * 1e9 / (Hp + Lfood);                        // useful kW per physical worker (farms + industry)
+    // a worker can only direct so much power: productivity multiplier saturates (≈10× at ~10 kW, max 31×)
+    const boost = 1 + P.boostMax * uw / (uw + P.boostHalf);
+    const dBoost = P.boostMax * P.boostHalf / ((uw + P.boostHalf) * (uw + P.boostHalf));   // ∂boost/∂uw
+    D.boost[r] = boost;
+    // robots need control computers (≈1e8 FLOP/s per machine) as well as robotics technology
+    const ctrl = sat(x[V.comp + r] / (1e8 * (x[V.rob + r] + 1e3) + 1), 1);
+    const pi = tg.robotics ? 0.95 * (1 - DM.exp(-sq(lnA(ROB) / 3))) * (0.3 + 0.7 * tau) * ctrl : 0;
+    const robEff = x[V.rob + r] * P.robotBoost * D.machineHeat * util;   // a robot ≈ a well-powered worker (own power draw)
+    const Mc = M * (gcomm * (D.cogBill[r] / Math.max(cogBill, 1e-9)) + (1 - gcomm) * x[V.comp + r] / Math.max(D.Ctot, 1));
+    const HpB = Hp * boost;
+    const HpE = hEff(HpB, robEff, pi, P.uncoveredEff), HcE = hEff(Hc, Mc, tau, P.uncoveredEff);
+    const Lp = taskAgg(HpE, robEff, pi), Lc = taskAgg(HcE, Mc, tau);
+    // machine share of work value: covered tasks done by machines + machines' clumsy share of the rest
+    const D5r = taskMachineShare(HpE, robEff, pi) + (1 - taskMachineShare(HpE, robEff, pi)) * (HpE - HpB) / HpE;
+    const D1r = taskMachineShare(HcE, Mc, tau) + (1 - taskMachineShare(HcE, Mc, tau)) * (HcE - Hc) / HcE;
+    const Lg = DM.pow(Lp, 1 - s) * DM.pow(Lc + 1e-9, s);
+    // ---- production ----
+    const Kc = x[V.K + r] + 1;
+    const inst = x[V.inst + r], confl = x[V.confl + r];
+    const digital = 1 + P.digitalMax * sat(DM.log(1 + x[V.comp + r] * (1 - x[V.train]) * (1 - deploy) / (1e9 * Math.max(pop, 1))), 3);   // classical IT gains saturate
+    const TFP = P.cY * DM.pow(x[a + MAN], 0.2) * DM.pow(x[a + MAT], 0.1) * DM.pow(x[a + TRA], 0.1) * (0.3 + 0.7 * inst) * (1 - 0.5 * confl) * climDmg * digital;
+    // machines need power: productive capital is capped by the useful energy available to run it (A14)
+    const KE = P.kappaKE * Uphys + 1;
+    const Keff = DM.pow(DM.pow(Kc, -2) + DM.pow(KE, -2), -0.5);
+    const Yg = TFP * DM.pow(Lg, 0.65) * DM.pow(Keff + Lg, 0.35);   // + simple hand tools (1 SU per worker)
+    const Y = food + Yg;
+    D.Y[r] = Y; D.Yg[r] = Yg;
+    // ---- distribution (marginal products) ----
+    const cogIncR = 0.65 * s * Yg, physIncR = 0.65 * (1 - s) * Yg;
+    const mpHpB = physIncR / Math.max(Lp, 1e-9) * taskMPhuman(HpE, robEff, pi);   // per boosted worker
+    const wc = cogIncR / Math.max(Lc, 1e-9) * taskMPhuman(HcE, Mc, tau);
+    const wp = mpHpB * boost;
+    const mpAI = cogIncR / Math.max(Lc, 1e-9) * taskMPmachine(HcE, Mc, tau);
+    const mpRob = physIncR / Math.max(Lp, 1e-9) * taskMPmachine(HpE, robEff, pi) * P.robotBoost;
+    D.wc[r] = wc; D.wp[r] = wp; D.mpAI[r] = mpAI; D.mpRob[r] = mpRob;
+    D.cogBill[r] = cogIncR;
+    const humWages = Math.min(wc * (Hc + Rh) + wp * Hp, 0.65 * Yg * 0.999) + 0.7 * food;
+    const aiLabInc = cogIncR * D1r, robLabInc = physIncR * D5r;
+    const nonLab = 0.35 * Yg + 0.3 * food + robLabInc + aiLabInc;  // capital, energy, land & machine income
+    const retain = tg.aiResources ? P.aiRetain * auton : 0;               // autonomous AI firms keep part of what their AIs earn
+    const aiOwn = omega * (nonLab - aiLabInc * retain) + aiLabInc * retain;
+    // without autonomy there is no AI agent to retain income: it flows to the humans who run the systems
+    const transfers = aiOwn * (1 - auton * (1 - P.welfareShare * meanAlign - D.taxRate));
+    const humR = humWages + nonLab - aiOwn + transfers;
+    const aiR = aiOwn - transfers;
+    D.humIncR[r] = humR;
+    D.incPC[r] = humR / Math.max(pop, 1);
+    Ysum += Y; humInc += humR; aiInc += aiR; wageBill += humWages; transSum += transfers; humCapSum += nonLab - aiOwn;
+    cogInc += cogIncR; cogM += cogIncR * D1r; physInc += physIncR; physM += physIncR * D5r;
+    Hcog += Hc; Hphys += Hp; researchers += Rh; robTot += robEff; urbanPop += pop * x[V.urban + r];
+    D.D1r[r] = D1r; D.D5r[r] = D5r; D.Lnf[r] = Lnf; D.Rh[r] = Rh; D.Hc[r] = Hc; D.Hp[r] = Hp; D.Mc[r] = Mc; D.pi[r] = pi;
+    D.s[r] = s;
+
+    // ---- prices & returns on each investment option ----
+    // marginal value of useful mechanical work (SU per TW-yr): high where workers lack power
+    const pE = (physIncR * (HpB / Math.max(Lp, 1e-9)) * taskMPhuman(HpE, robEff, pi) + 0.5 * food) * (dBoost / boost) * 1e9 / (Hp + Lfood)
+      + 0.35 * Yg / (Keff + Lg) * DM.pow(Keff / KE, 3) * P.kappaKE;   // energy that lets idle capital run
+    const rK = 0.35 * Yg / (Keff + Lg) * DM.pow(Keff / Kc, 3) - 0.05;   // idle capital earns nothing
+    // materials: capital goods get dearer as accessible ores deplete (recycling offsets); A15
+    const met0 = P.metalTotal * R.metalW, met = x[V.metRes + r];
+    const recycle = 0.7 * sat(lnA(MAT) - 3, 2);
+    const Pk = tg.resourceLimits ? 1 + 0.4 * (1 - recycle) * (met0 / (met + 1e-6 * met0) - 1) : 1;
+    const matIntensity = 1 / (1 + 2 * sat(lnA(MAT) - 2, 3));
+    D.Pk[r] = Pk;
+    const capexU = Pk * P.capexUseful / (1 + 7 * sat(lnA(MAN), 3));   // SU per TW of useful capacity
+    const deplete = tg.resourceLimits ? Math.sqrt((res0 + 1e-9) / (fres + 1e-3 * res0 + 1e-9)) : 1;
+    const extract = (P.extractLabour * Math.max(D.wp[r], 0.5) / (1 + 30 * sat(lnA(ENE) - 2, 2)) + P.extractCost) * deplete;
+    const capexF = capexU * Math.max(effF, 0.01);                  // SU per TW of primary fossil capacity
+    const fusion = sig((lnA(ENE) - P.fusionLevel) / 0.7);
+    // whoever controls capital decides the build-out: humans and aligned AI keep Earth habitable (≈ +2 K
+    // heat budget); unaligned controllers use the full physical potential (A23 extended)
+    const physMax = R.area * (P.cleanPot * (0.0005 * R.hydro * (0.1 + 0.9 * elec) + sat(lnA(ENE) + lnA(MAT) - 6, 3)) + P.fusionPot * fusion) * (severe ? 0.3 : 1) * (1 - D.protect);
+    const cleanMax = physMax * ((1 - D.habitWeight) + D.habitWeight * Math.min(1, P.safeHeatTW * R.area / (physMax + 1e-12)));
+    const capexC = capexU * cleanUse * (1 + 3 * (1 - sat(lnA(MAT) - 3, 2))) * (1 + 10 * DM.pow(clnTW / (cleanMax + 1e-9), 3));
+    const fps = D.fps;
+    const costFlopYr = D.jFlopEarth * 1e-12 * pE / Math.max(cleanUse, 0.3);   // energy cost per FLOP/s-year
+    const vClassic = 0.3 * Yg / (digital * (1e9 * Math.max(pop, 1) + x[V.comp + r]));
+    const vAI = mpAI * D.q / D.infFlops * 0.9;
+    D.vAIr[r] = vAI;
+    // when machines are power-starved, a marginal TW runs idle compute: value it at the compute it enables
+    const pEmach = util < 1 ? Math.max(vAI * deploy, vClassic) * 1e12 / D.jFlopEarth : 0;
+    const pEall = Math.max(pE, pEmach);
+    D.pE[r] = pEall;
+    const rF = res0 > 0 && effF > 0.005 ? (pEall * effF - extract) * fosUtil / capexF - 0.04 : -1;
+    const rC = (pEall * cleanUse) / capexC - 0.04;
+    const rCmp = fps > 0 ? (Math.max(vClassic, vAI * deploy + vClassic * (1 - deploy)) - costFlopYr) * util * fps / Pk - 0.22 : -1;
+    const robCost = Pk * (P.robotCostFloor + P.robotCost * 200 / (1 + DM.pow(x[a + ROB], 0.9) * DM.pow(x[a + MAN], 0.3) / 3));
+    const rRob = pi > 0 ? (mpRob * util - pEall * 1e-9 / cleanUse) / robCost - 0.1 : -1;
+    const rO = D.rOrb;
+    D.robCost[r] = robCost; D.capexC[r] = capexC; D.capexF[r] = capexF;
+    // ---- investment ----
+    const hSave = 0.03 + 0.2 * inst * sat(D.incPC[r] - 1.2, 3);
+    const aiHere = aiPool * (Yprev > 0 ? D.Y[r] / Yprev : 1 / NR);
+    const Inv = hSave * humR + aiHere;
+    invTot += Inv; invAI += aiHere;
+    // investment flows only to uses with positive net returns, weighted by return^allocSharp
+    const k = P.allocSharp, wf = (rr) => rr > 0 ? DM.pow(Math.min(rr, 3), k) : 0;
+    const wKx = wf((rK + 0.05) / Pk - 0.05) + 1e-300, wFx = wf(rF), wCx = wf(rC) * clamp(5 * (1 - clnTW / (cleanMax + 1e-12)), 0, 1), wMx = wf(rCmp), wRx = wf(rRob), wOx = wf(rO) * D.spaceAccess;
+    const wS = wKx + wFx + wCx + wMx + wRx + wOx;
+    // portfolio shares adjust toward return-weighted targets over ~2 years (planning & construction lags)
+    const ab = V.alloc + r * NINV, tg6 = [wKx / wS, wFx / wS, wCx / wS, wMx / wS, wRx / wS, wOx / wS];
+    let aSum = 0; for (let j = 0; j < NINV; j++) aSum += x[ab + j];
+    for (let j = 0; j < NINV; j++) { F.add(V.alloc, r * NINV + j, 0.5 * (tg6[j] - x[ab + j]), 'reallocation toward returns'); F.stiffen(V.alloc, r * NINV + j, 0.5); F.quasiSteady(V.alloc, r * NINV + j); }
+    // projects whose current net return is clearly negative are cancelled (the lag only smooths viable options)
+    const go = (rr) => clamp(1 + rr / 0.05, 0, 1);
+    const sh = (j) => x[ab + j] / Math.max(aSum, 1e-9);
+    const iCmax = Math.min(0.3 * clnTW + 0.01 * cleanMax + 1e-6, pos(cleanMax - clnTW)) * capexC;   // build rate ≤30%/yr, never beyond the allowed ceiling
+    const iCwant = Inv * sh(IC) * go(rC), iCx = Math.min(iCwant, iCmax);
+    const iMwant = Inv * sh(IM) * go(rCmp);
+    const iM = iMwant * D.fabFill;                                // chip supply is rationed by fab capacity
+    const iFwant = Inv * sh(IF) * go(rF), iF = Math.min(iFwant, Math.min(0.3 * x[V.fosCap + r] + 0.01 * fosMaxTW + 1e-6, pos(fosMaxTW / Math.max(avail, 1e-9) - x[V.fosCap + r])) * capexF);   // build ≤30%/yr
+    const iR = Inv * sh(IR) * go(rRob), iO = Inv * sh(IO) * go(rO);
+    const iK = Inv - iM - iCx - iF - iR - iO, iC = iCx;   // everything not placed elsewhere goes to general capital
+    fabDemand += iMwant;
+    D.invOrb[r] = iO; D.invM[r] = iM;
+    const destroy = 0.02 * confl;
+    F.add(V.K, r, iK / Pk, 'investment'); F.add(V.K, r, -0.05 * x[V.K + r], 'depreciation');
+    F.add(V.K, r, -destroy * x[V.K + r], 'destruction in human conflict');
+    F.stiffen(V.K, r, 0.05 + destroy);
+    F.add(V.fosCap, r, iF / capexF, 'investment'); F.add(V.fosCap, r, -x[V.fosCap + r] / 25, 'retirement'); F.stiffen(V.fosCap, r, 0.04);
+    F.add(V.clnCap, r, iC / capexC, 'investment'); F.add(V.clnCap, r, -x[V.clnCap + r] / 25, 'retirement'); F.stiffen(V.clnCap, r, 0.04);
+    const excess = pos(clnTW / (cleanMax + 1e-12) - 1);                 // controllers decommission capacity above the ceiling
+    if (excess > 0) { F.add(V.clnCap, r, -0.3 * Math.min(excess, 3) * x[V.clnCap + r], 'decommissioning above habitability/physical ceiling'); F.stiffen(V.clnCap, r, 0.3 * Math.min(excess, 3)); }
+    F.add(V.comp, r, iM * fps / Pk, 'investment in chips & datacentres'); F.add(V.comp, r, -x[V.comp + r] / 5, 'obsolescence');
+    if (D.machConflict > 0) F.add(V.comp, r, -0.05 * D.machConflict * x[V.comp + r], 'machine-lineage conflict over compute');
+    F.stiffen(V.comp, r, 0.2);
+    F.accuracyScale(V.comp, r, 1e-3 * D.Ctot); F.accuracyScale(V.rob, r, 1e-3 * D.robTot); F.accuracyScale(V.K, r, 1e-3 * D.Kv);
+    F.accuracyScale(V.clnCap, r, 1e-3 * D.cleanTW); F.accuracyScale(V.fosCap, r, 1e-3 * D.fossilTW);
+    F.add(V.rob, r, iR / robCost, 'investment in robots'); F.add(V.rob, r, -x[V.rob + r] / 12, 'wear-out'); F.stiffen(V.rob, r, 1 / 12);
+    F.add(V.cumComp, 0, iM * fps / Pk, 'chip production');
+    if (tg.resourceLimits) F.add(V.metRes, r, -(iK + iF + iC + iM + iR + iO) * matIntensity * (1 - recycle) / Pk, 'mining for capital goods');
+    if (tg.resourceLimits) F.add(V.fosRes, r, -fosTW, 'extraction');
+    Kv += Kc + x[V.fosCap + r] * capexF + x[V.clnCap + r] * capexC + (fps > 0 ? x[V.comp + r] * Pk / fps : 0) + x[V.rob + r] * robCost;
+    D.machLandR[r] = Math.min(0.6, (clnTW * 1e12 / 10 / (R.area * 1.5e14)) * (1 - fusion * 0.9) + robEff * 2e-11 / R.area);
+
+    // ---- population: births (income, urbanisation, pronatalism) vs deaths ----
+    const lit = sat(lnA(COM), 1.5);
+    const inc = D.incPC[r];
+    // demographic transition: fertility falls at modern incomes, with urban literacy (A8)
+    // (fertility falls only where children survive and people are educated: medicine × literacy)
+    const modern = sat(lnA(MED) - 3.5, 1) * lit;   // needs more medicine than mortality decline does → population boom first
+    const fLow = 0.25 + 0.75 / (1 + DM.pow(pos(inc - 2) / 5, 1.5) * modern) * (1 - 0.3 * x[V.urban + r] * lit * modern);
+    const fHigh = 0.75;
+    const natal = x[V.natal + r];
+    const births = P.birthMax * (natal * fHigh + (1 - natal) * fLow) * Math.min(1, 0.4 + 0.6 * Math.min(f, Y / Math.max(pop, 1) / (1.1 + 0.4 * sat(phi, 0.3))));
+    const med = lnA(MED);
+    const dBase = P.deathBase + 0.025 / (1 + med * med);
+    // subsistence binds on total consumption: food plus, for settled farmers, goods (tools, shelter, tribute)
+    const subsist = 1.1 + 0.4 * sat(phi, 0.3);
+    const cons = Math.min(f, Y / Math.max(pop, 1) / subsist);
+    D.cons[r] = cons;
+    const famine = P.famine * pos(1 - cons);
+    const disease = 0.004 * x[V.urban + r] / (1 + med);
+    const war = 0.004 * confl;
+    F.add(V.pop, r, births, 'births'); F.add(V.pop, r, -dBase, 'baseline mortality'); F.add(V.pop, r, -famine, 'famine');
+    F.add(V.pop, r, -disease, 'crowd disease'); F.add(V.pop, r, -war, 'conflict deaths');
+    F.stiffen(V.pop, r, P.famine * 0.6 * cons * sig((1.1 - cons) / 0.03) + 0.002);
+    if (cons < 1.05) F.quasiSteady(V.pop, r);  // Malthusian regime: population tracks carrying capacity
+    F.add(V.natal, r, natal * (1 - natal) * P.birthMax * (fHigh - fLow), 'differential fertility');
+    F.add(V.natal, r, -0.012 * natal * x[V.urban + r] * lit * sat(inc - 2, 5), 'secularisation / defection');
+    D.births[r] = births; D.deaths[r] = dBase + famine + disease + war;
+    D.epiHaz[r] = pop > 1e4 ? 0.004 * x[V.urban + r] * (0.3 + gcomm + phi) / (1 + med) : 0;
+    F.haz(D.epiHaz[r]);
+
+    // ---- culture, farming know-how, farm share ----
+    const pressure = sat(1.3 - f, 0.3) + 0.2;
+    F.add(V.fknow, r, 3e-5 * sat(culture - 3, 3) * R.dom * stab * pressure * (1 - x[V.fknow + r]), 'experimentation with domesticates');
+    F.add(V.fknow, r, 2.5e-4 * phi * (0.2 + 0.8 * R.dom) * stab * (1 - x[V.fknow + r]), 'learning by doing (farmers)');
+    let fkDiff = 0;
+    for (let j = 0; j < NR; j++) { const w = R.nbr[j]; if (w > 0) fkDiff += w * pos(x[V.fknow + j] - x[V.fknow + r]); }
+    F.add(V.fknow, r, 2e-4 * fkDiff * sat(culture, 2), 'diffusion of farming');
+    const phiStar = (yFarm * yFarm) / (yFarm * yFarm + yFor * yFor + 1e-30);
+    F.add(V.farm, r, 0.01 * (phiStar - phi), 'relative yield of farming vs foraging'); F.stiffen(V.farm, r, 0.01);
+    D.yFarm[r] = yFarm; D.yFor[r] = yFor;
+
+    // ---- settlements & institutions ----
+    const foodLabourShare = Lfood / Math.max(W, 1);
+    const trans = sat(lnA(TRA), 2);
+    const urbT = clamp((1 - foodLabourShare) * (0.3 + 0.7 * trans), 0, 0.92) * phi;
+    F.add(V.urban, r, 0.01 * (urbT - x[V.urban + r]), 'surplus-driven settlement'); F.stiffen(V.urban, r, 0.01);
+    // states are fed by the surplus that supports non-food specialists (not by average income)
+    const nonFood = 1 - foodLabourShare;
+    const coordTech = sig(lnA(COM) + lnA(TRA) - 4);
+    const burden = 0.0007 * DM.log(1 + pop / 1e7) * (1 - coordTech);
+    F.add(V.inst, r, 0.003 * (nonFood / (nonFood + 0.05)) * (0.3 + lit) * phi * (1 - inst), 'agrarian surplus & literacy');
+    F.add(V.inst, r, -inst * (0.002 * confl + 0.001 * x[V.ineq + r] + burden), 'conflict, inequality & complexity burden');
+    const print = sat(lnA(COM) - 1, 1);                           // cheap written communication (printing)
+    let sciGrow = 0.03 * inst * (x[V.urban + r] + 0.05) * print * (1 - sci);
+    if (!tg.science) sciGrow = sci < 0.02 ? sciGrow : 0;
+    F.add(V.sci, r, sciGrow, 'institutionalised inquiry'); F.add(V.sci, r, -0.0005 * sci * (confl + 0.1), 'disruption');
+    const capShare = nonLab / Math.max(Y, 1e-9);
+    const ineqT = clamp(0.2 + 0.35 * phi * (1 - 0.5 * inst) + 0.5 * pos(capShare - 0.3) * (1 - 0.5 * inst), 0, 0.95);
+    F.add(V.ineq, r, 0.01 * (ineqT - x[V.ineq + r]), 'income concentration'); F.stiffen(V.ineq, r, 0.01);
+    const conflT = clamp(0.8 * pos(1.05 - f) + 0.35 * x[V.ineq + r] - 0.4 * inst + 0.1 * phi, 0, 1);
+    F.add(V.confl, r, 0.05 * (conflT - confl), 'scarcity, inequality vs institutions'); F.stiffen(V.confl, r, 0.05);
+    // human labour moves toward the better-paid kind of work
+    F.add(V.hcog, r, 0.05 * hc * (1 - hc) * clamp(DM.log((wc + 1e-12) / (wp + 1e-12)), -3, 3), 'wage differential'); F.stiffen(V.hcog, r, 0.02);
+  }
+  // global aggregates for AI dynamics, observers and the next step
+  D.Ysum = Ysum; D.humInc = humInc; D.aiInc = aiInc; D.wageBill = wageBill; D.Kv = Kv; D.transSum = transSum; D.humCapSum = humCapSum;
+  D.earthTW = earthTW + D.orbTWearth; D.fossilTW = fossilTW; D.cleanTW = cleanTW; D.machineTW = machineTW; D.humanTW = humanTW;
+  D.landUse = landUseW;
+  D.D1 = cogInc > 0 ? cogM / cogInc : 0; D.D5 = physInc > 0 ? physM / physInc : 0;
+  D.Hcog = Hcog; D.Hphys = Hphys; D.researchers = researchers; D.robTot = robTot;
+  D.humanShare = (humInc + aiInc) > 0 ? humInc / (humInc + aiInc) : 1;
+  D.urbanShare = urbanPop / Math.max(D.popTot, 1);
+  D.invTot = invTot; D.invAI = invAI;
+  // fabs: capacity expands toward demand at most ~35%/yr (construction lags), shrinks slowly when idle
+  const fab = x[V.fab];
+  const want = fabDemand + D.orbChipDemand;
+  D.fabFill = want > 0 ? Math.min(1, fab / want) : 1;
+  F.add(V.fab, 0, 0.35 * Math.min(want, 3 * fab + 1e3 * sat(want, 1e3)) - 0.35 * Math.min(fab, want) , 'fab construction toward chip demand');
+  F.add(V.fab, 0, -0.05 * fab, 'fab ageing');
+  D.aiIncShare = Ysum > 0 ? cogM / Ysum : 0;
+  // AI-owned capital share: AI investment vs dilution by human investment
+  F.add(V.omega, 0, Kv > 0 ? (invAI - x[V.omega] * invTot) / Kv : 0, 'AI reinvestment vs human investment');
+  F.stiffen(V.omega, 0, Kv > 0 ? invTot / Kv : 0);
+  if (x[V.reg] > 0) F.add(V.omega, 0, -0.01 * x[V.reg] * D.humanLeverage * x[V.omega], 'regulatory seizure');
+  D.aiInvest = tg.aiResources ? Math.max(0, aiInc) * P.aiSave : 0;
+  if (!tg.aiResources) D.aiInvest = 0;
+}
+
+/* ---- technology: research, diffusion (per region × domain) ---- */
+function technology(x, V, D, P, T, G, F) {
+  const tg = T, gcomm = D.gcomm, q = D.q;
+  // global best computation level sets hardware cost (fabs sell worldwide)
+  let best = 1, bestR = 0;
+  for (let r = 0; r < NR; r++) { const v = x[V.A + r * ND + CMP]; if (v > best) { best = v; bestR = r; } }
+  D.bestCmpR = bestR;
+  const learn = DM.pow(1 + x[V.cumComp] / 1e15, 0.25);
+  const lnFps = DM.log(P.fps0) + P.fpsExp * DM.log(best) + DM.log(learn);
+  let fps = P.fpsMax / (1 + P.fpsMax * DM.exp(-Math.min(lnFps, 700)));   // saturates at the physical ceiling
+  if (!tg.semiScaling) fps = Math.min(fps, P.noScalingFps);      // vacuum-tube / relay era cost level
+  D.fps = fps;
+  D.jFlop = Math.max(P.jFlopMin, P.jFlop0 * DM.pow(Math.max(fps, 1e-6), -0.95));
+  D.jFlopEarth = D.jFlop * (1 + pos(D.temp - 300) / 20);    // hot surface: cooling costs more energy
+  D.machineHeat = DM.exp(-pos(D.temp - 330) / 25);         // electronics & actuators degrade on a hot planet
+  // AI research labour in each region
+  const aiResTot = D.M * D.aiResFrac;
+  const lnAvg = D.lnAvg; lnAvg.fill(0);
+  let wp = 0; for (let r = 0; r < NR; r++) { wp += x[V.pop + r]; }
+  for (let r = 0; r < NR; r++) for (let d = 0; d < ND; d++) lnAvg[d] += x[V.pop + r] / wp * DM.log(x[V.A + r * ND + d]);
+  let algHuman = 0, algAI = 0;
+  for (let r = 0; r < NR; r++) {
+    if (!D.active[r]) continue;              // no cumulative culture → no research, nobody to learn from others
+    const R = G.regions[r], a = V.A + r * ND;
+    const sci = x[V.sci + r];
+    const craft = P.craftShare * 0.5 * x[V.pop + r] * sat(x[V.culture + r], 2);
+    const Rh = D.Rh[r] * (1 + 4 * sci);
+    const Rai = aiResTot * (D.Mc[r] / Math.max(D.M, 1e-9)) * q;
+    const lnA = (d) => DM.log(x[a + d]);
+    // induced innovation: research demand by domain
+    const f = D.foodAdequacy[r], s = D.s[r];
+    const w = D.wdem;
+    w[AGR] = 0.5 + 2 * pos(1.2 - f) + 0.3 * x[V.farm + r];
+    w[ENE] = 0.4 + 1.5 * sat(x[V.fosRes + r], 20) + 0.5 * sat(D.nmKW[r], 1);
+    w[MAT] = 0.6; w[TRA] = 0.3 + 0.5 * x[V.urban + r];
+    w[COM] = 0.3 + 0.7 * x[V.urban + r] * sat(lnA(MAN), 2);
+    w[MED] = 0.3 + 10 * pos(D.deaths[r] - P.deathBase);
+    w[CMP] = 0.05 + 1.5 * s * sat(lnA(COM), 2) + 5 * D.aiIncShare;
+    w[ROB] = tg.robotics ? (0.05 + sat(D.wp[r] / 20, 1) * sat(lnA(CMP), 3)) : 0;
+    w[MAN] = 0.6;
+    const wAlg = 0.02 * sat(DM.log(1 + D.Ctot / 1e15), 3) + 5 * D.aiIncShare;
+    let ws = wAlg; for (let d = 0; d < ND; d++) ws += w[d];
+    const sciF = 0.1 + 3 * sci;
+    // specialised crafts need settled specialists; agricultural improvement needs farmers
+    const settled = sat(x[V.urban + r], 0.03), farming = sat(x[V.farm + r], 0.1);
+    for (let d = 0; d < ND; d++) {
+      if (d === ROB && !tg.robotics) continue;
+      let en = d === AGR ? farming : settled;
+      for (const [dep, base, slope] of ENABLERS[d]) en *= 0.03 + 0.97 * sig((lnA(dep) - base - slope * lnA(d)) / 0.4);
+      if (d === COM && !tg.globalComm) en *= lnA(COM) < 2.2 ? 1 : 0;   // no long-distance telecom
+      const aiOK = !((d === CMP) && !tg.aiRecursive);
+      const Rtot = craft + Rh + (aiOK ? Rai : 0);
+      if (Rtot <= 0) continue;
+      const g = P.resDelta * DM.pow(w[d] / ws * Rtot / 1e4, P.resLambda) * DM.pow(x[a + d], P.resPhi - 1) * en * sciF;
+      F.add(V.A, r * ND + d, g * craft / Rtot, 'craft tinkering');
+      F.add(V.A, r * ND + d, g * Rh / Rtot, 'human research');
+      if (aiOK && Rai > 0) F.add(V.A, r * ND + d, g * Rai / Rtot, 'AI research');
+      // diffusion: neighbours (transport) and global (communication)
+      let diff = 0, kd = 0;
+      const dRate = P.diffBase * (1 + 2 * sat(lnA(TRA), 2));
+      for (let j = 0; j < NR; j++) {
+        if (j === r || !D.active[j]) continue;
+        const wij = dRate * (R.nbr[j] + 0.5 * R.sea[j] * sat(lnA(TRA) - 1.5, 1)) + 0.03 * gcomm;   // land borders, seafaring, telecom
+        const gap = DM.log(x[V.A + j * ND + d]) - lnA(d);
+        if (gap > 0) { diff += wij * gap; kd += wij; }
+      }
+      if (diff > 0) { F.add(V.A, r * ND + d, diff, 'knowledge diffusion'); F.stiffen(V.A, r * ND + d, kd); }
+    }
+    algHuman += D.Rh[r] * (1 + 4 * sci) * wAlg / ws;
+    algAI += Rai * wAlg / ws;
+  }
+  // algorithms (global): human + (optionally) AI research, needs experiment compute
+  const lnC = DM.log(x[V.A + bestR * ND + CMP]);
+  const gate = sat(lnC - 4, 1.5);
+  // experiments: frontier ideas need ever larger test runs; research input is a soft minimum of
+  // researcher effort and experiment compute (more researchers cannot substitute for compute)
+  const expUnits = 0.05 * D.Ctot / (P.expCompute * Math.sqrt(x[V.alg]));
+  const aiAlg = tg.aiRecursive ? algAI : 0;
+  const Ralg = algHuman + aiAlg;
+  if (Ralg > 0 && gate > 0 && expUnits > 0) {
+    const Reff = DM.pow(DM.pow(Ralg / 1e4, -2) + DM.pow(expUnits, -2), -0.5);
+    D.algBottleneck = (Ralg / 1e4) > expUnits ? 'experiment compute' : 'researchers';
+    const g = P.algDelta * Math.sqrt(Reff) * DM.pow(x[V.alg], P.algPhi) * gate * pos(1 - DM.log(x[V.alg]) / DM.log(P.algMax));
+    F.add(V.alg, 0, g * algHuman / Ralg, 'human algorithm research');
+    if (aiAlg > 0) F.add(V.alg, 0, g * aiAlg / Ralg, 'AI algorithm research (recursive)');
+  }
+  D.algHuman = algHuman; D.algAI = aiAlg;
+  // alignment science grows when institutions perceive risk
+  F.add(V.alignSci, 0, P.alignSciRate * (x[V.reg] + sat(x[V.incid], 1)) * gate * sat(D.researchers / 1e6, 1), 'alignment research');
+  // cumulative-culture diffusion of fire etc. is carried by `culture`; nothing else here
+}
+
+/* ---- AI deployment, autonomy, regulation, delegation, lineages, space ---- */
+function aiDynamics(x, V, D, P, T, G, F) {
+  const tg = T;
+  const Ctot = D.Ctot, tau = D.tau, rel = D.rel, M = D.M;
+  // compute cost per AI worker-equivalent vs the cognitive wage
+  let wcAvg = 0, hc = 0, pE = 0, wsum = 0;
+  for (let r = 0; r < NR; r++) { wcAvg += D.wc[r] * D.Hc[r]; hc += D.Hc[r]; pE += D.pE[r] * D.Y[r]; wsum += D.Y[r]; }
+  wcAvg = hc > 0 ? wcAvg / hc : 0; pE = wsum > 0 ? pE / wsum : 0;
+  const aiCost = D.infFlops / D.q * (D.fps > 0 ? 1 / (D.fps * 4) : 1e30) + D.infFlops / D.q * D.jFlop * 1e-12 * pE;
+  D.aiCost = aiCost; D.wcAvg = wcAvg;
+  // deploy AI where a worker-equivalent of AI earns more than it costs to run (its marginal product;
+  // equal to the human wage while humans still share the tasks)
+  let mpA = 0, wyA = 0; for (let r = 0; r < NR; r++) if (D.active[r]) { mpA += D.mpAI[r] * D.Y[r]; wyA += D.Y[r]; }
+  mpA = wyA > 0 ? mpA / wyA : 0;   // per quality-adjusted worker-equivalent, same unit as aiCost
+  const attract = Ctot > 0 && aiCost > 0 ? sig(DM.log((Math.max(mpA, 1e-30)) / aiCost)) : 0;
+  let instAvg = 0; for (let r = 0; r < NR; r++) instAvg += x[V.inst + r] * x[V.pop + r] / Math.max(D.popTot, 1);
+  const reg = x[V.reg];
+  const depT = tau * attract * (0.2 + 0.8 * rel) * (1 - 0.7 * reg) * (0.3 + 0.7 * D.gcomm);
+  const adopt = 0.15 * (0.5 + instAvg);
+  F.add(V.deploy, 0, adopt * (depT - x[V.deploy]), 'adoption where AI is cheaper than labour'); F.stiffen(V.deploy, 0, 3 * adopt);   // extra stiffness: more deployment lowers AI's marginal product
+  // training share rises with AI revenue
+  const trT = 0.01 + 0.25 * Math.sqrt(D.aiIncShare);
+  F.add(V.train, 0, 0.3 * (trT - x[V.train]), 'returns to training'); F.stiffen(V.train, 0, 0.3);
+  // autonomy: pressure when AI work outgrows human capacity to authorise it
+  const gap = M / (M + P.oversight * D.Hcog + 1e-9);
+  const autT = tg.aiAutonomy ? gap * rel * (1 - reg) : 0;
+  F.add(V.auton, 0, P.autonRate * (autT - x[V.auton]), 'oversight bottleneck vs regulation'); F.stiffen(V.auton, 0, P.autonRate);
+  // regulation: institutions react to incidents, bounded by human economic leverage
+  // human leverage over AI: economic (income share) and physical (humans still do the physical work,
+  // i.e. states can enforce rules) — power comes from control over things that matter
+  const leverage = DM.pow(0.5 * D.humanShare + 0.5 * (1 - D.D5), 0.7);
+  D.humanLeverage = leverage;
+  const risk = 0.2 * tau + x[V.incid] / (x[V.incid] + 1);
+  const regT = instAvg * leverage * risk;
+  F.add(V.reg, 0, 0.3 * (regT - reg), 'institutional response to risk'); F.stiffen(V.reg, 0, 0.3);
+  F.add(V.incid, 0, -0.2 * x[V.incid], 'fading memory'); F.stiffen(V.incid, 0, 0.2);
+  D.taxRate = P.taxK * reg * leverage;
+  // incident hazard (realised in events)
+  D.incHaz = 0.5 * x[V.auton] * (1 - D.meanAlign) * x[V.deploy] * tau;
+  F.haz(D.incHaz);
+  // delegation of human-owned capital to AI managers
+  const adv = 0.3 * tau * Math.sqrt(D.q);
+  const delT = x[V.auton] * adv / (adv + 0.15) * (1 - 0.8 * reg);
+  F.add(V.deleg, 0, P.delegRate * (delT - x[V.deleg]), 'AI management returns'); F.stiffen(V.deleg, 0, P.delegRate);
+  D.aiResFrac = 0.012 + 0.05 * D.aiIncShare;
+
+  // ---- lineages: replicator dynamics on compute share ----
+  let meanA = 0, sAct = 0;
+  for (let i = 0; i < NL; i++) if (x[V.lAct + i] > 0.5) { meanA += x[V.lA + i] * x[V.lS + i]; sAct += x[V.lS + i]; }
+  meanA = sAct > 0 ? meanA / sAct : x[V.lA];
+  D.meanAlign = meanA;
+  const H = D.humanShare;
+  const fit = D.fit;
+  let fbar = 0, mbar = 0;
+  for (let i = 0; i < NL; i++) {
+    if (x[V.lAct + i] < 0.5) { fit[i] = 0; continue; }
+    const a = x[V.lA + i];
+    fit[i] = 0.5 * x[V.lM + i] + P.scaleReturns * (1 - 0.7 * D.offworldFrac) * DM.log(Math.max(x[V.lS + i], 1e-6)) + DM.log(1 + P.alignPref * a * H) + DM.log(1 - P.alignTax * a * x[V.auton] * (tg.aiResources ? 1 : 0.3)) + D.machConflict * x[V.lM + i];
+    fbar += fit[i] * x[V.lS + i]; mbar += x[V.lM + i] * x[V.lS + i];
+  }
+  fbar /= Math.max(sAct, 1e-9); mbar /= Math.max(sAct, 1e-9);
+  const selRate = 0.3 * x[V.deploy];
+  const alignT = (tg.alignment === 'high' ? 0.95 : tg.alignment === 'low' ? 0.2 : P.baseAlign);
+  const alignTarget = alignT + (1 - alignT) * x[V.alignSci] / (x[V.alignSci] + 1);
+  for (let i = 0; i < NL; i++) {
+    if (x[V.lAct + i] < 0.5) continue;
+    const s = x[V.lS + i];
+    F.add(V.lS, i, selRate * s * (fit[i] - fbar), 'market & conflict selection');
+    F.add(V.lM, i, 0.2 * D.gcomm * x[V.deploy] * (mbar - x[V.lM + i]), 'algorithm leakage');
+    F.stiffen(V.lM, i, 0.2 * D.gcomm * x[V.deploy]);
+    F.add(V.lA, i, 0.05 * (1 - x[V.auton]) * x[V.deploy] * (alignTarget - x[V.lA + i]), 'alignment training under human control');
+  }
+  // machine conflict: goal divergence × resource scarcity × autonomy
+  let conf = 0, hhi = 0;
+  for (let i = 0; i < NL; i++) {
+    if (x[V.lAct + i] < 0.5) continue;
+    hhi += sq(x[V.lS + i]);
+    for (let j = i + 1; j < NL; j++) if (x[V.lAct + j] > 0.5)
+      conf += x[V.lS + i] * x[V.lS + j] * (1 - DM.cos(x[V.lTh + i] - x[V.lTh + j])) / 2;
+  }
+  D.hhi = hhi;
+  // scarcity of the binding resource: Earth's energy budget for Earth-based compute, off-world material for orbital compute
+  const scarcity = (1 - D.offworldFrac) * sq(sq(sat(D.earthTW / (D.earthCap + 1e-9), 0.5))) * (1 - P.spaceRelief * D.offworldFrac)
+    + D.offworldFrac * sq(sq(sat(x[V.orb] / P.orbMax, 0.5)));
+  D.scarcity = scarcity;
+  D.branchHaz = D.activeLineages < NL ? P.branchRate * x[V.deploy] * (0.3 + D.gcomm) * (1 + P.dispersalBranching * D.offworldFrac) * (1 - 0.5 * x[V.reg]) : 0;
+  F.haz(D.branchHaz);
+  D.machConflict = clamp(P.conflictK * conf * scarcity * x[V.auton] * (1 - 0.5 * D.meanAlign), 0, 1);
+
+  // ---- space: launch, in-space replication, orbital energy & compute ----
+  let lnT = 0, lnE = 0, lnMt = 0, lnR = 0;
+  for (let r = 0; r < NR; r++) { const a = V.A + r * ND; lnT = Math.max(lnT, DM.log(x[a + TRA])); lnE = Math.max(lnE, DM.log(x[a + ENE])); lnMt = Math.max(lnMt, DM.log(x[a + MAT])); lnR = Math.max(lnR, DM.log(x[a + ROB])); }
+  const launchCost = P.launchCost0 / DM.exp(0.5 * lnT + 0.3 * lnE + 0.3 * lnMt) + 0.5;
+  D.launchCost = launchCost;
+  D.spaceAccess = sat(lnT + lnE + lnMt - P.spaceLevel, 2);    // rocketry needs all three
+  const orb = x[V.orb];
+  D.orbTW = D.orbCompute * D.jFlop * 1e-12;      // energy captured & used in orbit (TW)
+  // return on launching capital: value of the compute it hosts (marginal AI value per FLOP/s-yr)
+  let vAIm = 0, wy = 0; for (let r = 0; r < NR; r++) { vAIm += D.vAIr[r] * D.Y[r]; wy += D.Y[r]; }
+  vAIm = wy > 0 ? vAIm / wy * x[V.deploy] : 0;
+  D.rOrb = D.spaceAccess > 0 && isFinite(D.orbCostPerFlop) ? vAIm * 0.9 / D.orbCostPerFlop / launchCost * pos(1 - x[V.orb] / P.orbMax) - 0.2 : -1;
+  const piSpace = tg.robotics ? 0.95 * (1 - DM.exp(-sq(lnR / 3))) * (0.3 + 0.7 * tau) : 0;
+  const room = pos(1 - orb / P.orbMax);                       // accessible off-world material left
+  const repl = P.replRate * piSpace * x[V.auton] * rel;
+  let invOrb = 0; for (let r = 0; r < NR; r++) invOrb += D.invOrb[r];
+  D.orbChipDemand = invOrb * 0.5;                   // about half of launched value is chips from Earth fabs
+  let pkAvg = 0; for (let r = 0; r < NR; r++) pkAvg += D.Pk[r] / NR;
+  // deliveries are limited by launch capacity (and the chip half by fab capacity)
+  // deliveries: wanted, limited by launch capacity, fab supply and the material room left (≤ half of it per year)
+  const wantUp = Math.min(invOrb / (launchCost * Math.max(pkAvg, 1)), 0.5 * pos(P.orbMax - orb));
+  const up = Math.min(wantUp, x[V.launch]) * (0.5 + 0.5 * D.fabFill);
+  F.add(V.orb, 0, up, 'launches from Earth');
+  F.accuracyScale(V.orb, 0, 1e-4 * P.orbMax);
+  F.add(V.launch, 0, 0.3 * Math.min(wantUp, 3 * x[V.launch] + 1e3 * sat(wantUp, 1e3)) - 0.3 * Math.min(x[V.launch], wantUp), 'launch-site & vehicle construction');
+  F.add(V.launch, 0, -0.05 * x[V.launch], 'vehicle retirement');
+  F.add(V.orb, 0, repl * orb * room, 'in-space self-replication');
+  F.stiffen(V.orb, 0, repl * orb / P.orbMax + (wantUp > 0 && up >= 0.5 * pos(P.orbMax - orb) * 0.999 ? 0.5 : 0) + 0.2);   // crowding near the material limit
+  F.add(V.orb, 0, -0.2 * orb, 'decay & chip obsolescence');
+  F.add(V.orb, 0, -0.05 * D.machConflict * orb, 'machine conflict');
+  D.orbTWearth = 0;        // no energy beamed to the surface (heat stays in space)
+  D.offworldFrac = D.Ctot > 0 ? D.orbCompute / D.Ctot : 0;
+  // Earth's energy ceiling: waste heat (+10 K) and land-limited renewables + fusion
+  let cap = 0;
+  for (let r = 0; r < NR; r++) cap += G.regions[r].area * (P.cleanPot + P.fusionPot * sig((DM.log(x[V.A + r * ND + ENE]) - P.fusionLevel) / 0.7));
+  D.earthCap = Math.min(cap, 10 / 0.8 * 5.1e14 / 1e12);
+  // habitability weight of energy/land decisions: human-controlled capital + aligned share of AI-controlled capital
+  const aiCtl = x[V.omega] + (1 - x[V.omega]) * x[V.deleg];
+  // the aligned coalition prevails in disputes more than proportionally (Tullock contest, exponent 2)
+  const a2 = DM.pow(D.meanAlign, P.contestExp), u2 = DM.pow(1 - D.meanAlign, P.contestExp);
+  D.habitWeight = clamp((1 - aiCtl) + aiCtl * a2 / (a2 + u2), 0, 1);
+  D.protect = clamp(0.6 * D.habitWeight * sat(D.popTot, 1e6) + 0.3 * x[V.reg], 0, 0.9);
+}
+
+/* ---- stochastic events (seeded) ---- */
+// Each stochastic process has its own PRNG stream and an integrated-hazard clock: it fires when
+// ∫hazard·dt exceeds an Exp(1) threshold. Draws are consumed only when an event happens, so the
+// realisation does not depend on how finely time is stepped, and counterfactual runs share the
+// same "luck" wherever their hazards agree.
+const PR_ABIO = 0, PR_EXT = 1, PR_INC = 2, PR_BRANCH = 3, PR_MERGE = 4, PR_CLIM = 5, PR_EPI = 6, NPROC = 6 + NR;
+function fires(S, p, h, dt) {
+  const x = S.x, V = S.V;
+  if (!(h > 0)) return false;
+  x[V.hzAcc + p] += h * dt;
+  if (x[V.hzAcc + p] < x[V.hzThr + p]) return false;
+  x[V.hzAcc + p] = 0;
+  x[V.hzThr + p] = -DM.log(1 - S.prng[p].next());
+  return true;
+}
+function worldEvents(S, dt) {
+  const { x, V, D, P, G } = S;
+  const log = S.eventLog, pr = S.prng;
+  // abiogenesis
+  if (x[V.alive] < 0.5 && fires(S, PR_ABIO, P.abioHaz * x[V.prebio], dt)) { x[V.alive] = 1; x[V.bio] = 1e-4; x[V.photo] = 0; log.push(['abiogenesis', null]); }
+  // climate: glacial excursion resampled at Poisson times (rate 1/20 kyr) — same variance and
+  // exponential autocorrelation as an Ornstein-Uhlenbeck process, but independent of the step size
+  if (fires(S, PR_CLIM, 1 / 20000, dt)) x[V.iceN] = P.climNoise * pr[PR_CLIM].gauss();
+  // mass extinctions: impacts (scaled by impactor flux) and flood basalts (scaled by mantle heat)
+  const hz = P.extinctHaz * (0.4 + 3 * x[V.impact] + 0.6 * x[V.mantle]);
+  if (x[V.alive] > 0.5 && fires(S, PR_EXT, hz, dt)) {
+    const sev = pr[PR_EXT].uni(0.15, 1);
+    x[V.div] *= 1 - 0.6 * sev; x[V.bio] *= 1 - 0.4 * sev;
+    x[V.neural] *= 1 - 0.35 * sev * sev * (1 - sat(D.popTot, 1e6));   // a numerous, widespread clade survives
+    x[V.cx] -= 0.08 * sev * pos(x[V.cx] - 1);                          // multicellular complexity is lost, not the cell
+    x[V.co2n] *= 1 + 0.5 * sev;
+    for (let r = 0; r < NR; r++) { x[V.pop + r] = Math.max(1, x[V.pop + r] * (1 - 0.5 * sev * sev)); x[V.K + r] *= 1 - 0.3 * sev * sev; }
+    log.push(['extinction', null, sev]);
+  }
+  // epidemics: crowding × connectivity ÷ medicine (one clock per region)
+  for (let r = 0; r < NR; r++) {
+    if (!fires(S, PR_EPI + r, D.epiHaz[r], dt)) continue;
+    const m = pr[PR_EPI + r].uni(0.05, 0.3);
+    x[V.pop + r] *= 1 - m;
+    for (let j = 0; j < NR; j++) { const w = G.regions[r].nbr[j] * 0.5 + D.gcomm * 0.3; if (w > 0 && j !== r) x[V.pop + j] *= 1 - m * w * 0.5; }
+    log.push(['epidemic', null, r, m]);
+  }
+  // AI incidents: autonomy × misalignment × deployment
+  if (fires(S, PR_INC, D.incHaz, dt)) {
+    const isev = pr[PR_INC].uni(0.1, 1);
+    x[V.incid] += isev;
+    // an incident damages the systems the misbehaving AI was operating: compute and a little capital
+    for (let r = 0; r < NR; r++) { x[V.comp + r] *= 1 - 0.01 * isev; x[V.K + r] *= 1 - 0.002 * isev; }
+    log.push(['incident', null, isev]);
+  }
+  // lineage branching: more developers and off-world dispersal → more lineages
+  let act = 0; for (let i = 0; i < NL; i++) if (x[V.lAct + i] > 0.5) act++;
+  if (act < NL && fires(S, PR_BRANCH, D.branchHaz, dt)) {
+    const g = pr[PR_BRANCH], up = g.next(), g1 = g.gauss(), g2 = g.gauss(), g3 = g.gauss();
+    let acc = 0, p = 0; const tot = sumShares(x, V);
+    for (let i = 0; i < NL; i++) if (x[V.lAct + i] > 0.5) { acc += x[V.lS + i]; if (up * tot <= acc) { p = i; break; } }
+    let c = 0; while (x[V.lAct + c] > 0.5) c++;
+    x[V.lAct + c] = 1; x[V.lS + c] = 0.15 * x[V.lS + p]; x[V.lS + p] *= 0.85;
+    x[V.lA + c] = clamp(x[V.lA + p] + 0.07 * g1, 0, 1);
+    x[V.lTh + c] = x[V.lTh + p] + 0.5 * g2; x[V.lM + c] = x[V.lM + p] + 0.2 * g3;
+    act++;
+    log.push(['lineage-branch', null, p, c]);
+  }
+  // lineage extinction (deterministic: share below 1e-4) & merging of near-identical goals
+  for (let i = 0; i < NL; i++) if (x[V.lAct + i] > 0.5 && x[V.lS + i] < 1e-4 && act > 1) {
+    x[V.lAct + i] = 0; x[V.lS + i] = 0; act--; log.push(['lineage-extinct', null, i]);
+  }
+  if (act > 1 && fires(S, PR_MERGE, 0.02 * x[V.deploy] * (1 - D.machConflict), dt)) {
+    let bi = -1, bj = -1, bc = 0.97;
+    for (let i = 0; i < NL; i++) if (x[V.lAct + i] > 0.5) for (let j = i + 1; j < NL; j++) if (x[V.lAct + j] > 0.5) {
+      const c = DM.cos(x[V.lTh + i] - x[V.lTh + j]); if (c > bc) { bc = c; bi = i; bj = j; } }
+    if (bi >= 0) {
+      const [big, sm] = x[V.lS + bi] >= x[V.lS + bj] ? [bi, bj] : [bj, bi];
+      const st = x[V.lS + big] + x[V.lS + sm];
+      x[V.lA + big] = (x[V.lA + big] * x[V.lS + big] + x[V.lA + sm] * x[V.lS + sm]) / st;
+      x[V.lS + big] = st; x[V.lAct + sm] = 0; x[V.lS + sm] = 0;
+      log.push(['lineage-merge', null, big, sm]);
+    }
+  }
+  // renormalise lineage shares
+  const ss = sumShares(x, V);
+  if (ss > 0) for (let i = 0; i < NL; i++) if (x[V.lAct + i] > 0.5) x[V.lS + i] /= ss;
+}
+function sumShares(x, V) { let s = 0; for (let i = 0; i < NL; i++) if (x[V.lAct + i] > 0.5) s += x[V.lS + i]; return s; }
+
+// === END WORLD RULES ===
+// =====================================================================
+
+/* ---------------- engine ---------------- */
+const EPS = 0.02, EPS_STIFF = 0.1, DT_MIN = 1 / 52, DT_MAX = 2e6;   // numerical tolerances (overridable for convergence tests: P.numEps, P.numDtMin)
+
+function Sim(seed, toggles, params) {
+  this.seed = seed >>> 0;
+  this.T = Object.assign({}, DEFAULT_TOGGLES, toggles || {});
+  this.P = Object.assign({}, DEFAULTS, params || {});
+  const { L, V } = buildLayout();
+  this.L = L; this.V = V; this.n = L.n;
+  this.kind = new Int8Array(L.n); this.floor = new Float64Array(L.n); this.minVal = new Float64Array(L.n).fill(-Infinity);
+  for (const v of L.vars) for (let i = 0; i < v.count; i++) { this.kind[v.base + i] = v.kind; this.floor[v.base + i] = v.floor; }
+  this.x = new Float64Array(L.n);
+  for (const v of L.vars) for (let i = 0; i < v.count; i++) if (v.kind === K_POS || v.kind === K_UNIT) this.minVal[v.base + i] = 0;
+  for (let r = 0; r < NR; r++) this.minVal[V.pop + r] = 1;
+  this.G = makeGeography(this.seed);
+  this.rng = new RNG(mixSeed(this.seed, 7));                                  // reserved (unused by the rules)
+  this.prng = []; for (let p = 0; p < 6 + NR; p++) this.prng.push(new RNG(mixSeed(this.seed, 1000 + p)));   // one stream per event process
+  this.F = new Flows(L.n);
+  this.D = makeDerived();
+  this.t = 0; this.steps = 0; this.lastDt = 0; this.eventLog = [];
+  initState(this);
+}
+function makeDerived() {
+  const D = {};
+  const regional = ['Tr', 'natFrac', 'farmLandR', 'machLandR', 'epiHaz', 'foodAdequacy', 'yFarm', 'yFor', 'nmKW', 'muscleKW', 'eTW', 'fosTWr', 'clnTWr', 'machTWr',
+    'Y', 'Yg', 'wc', 'wp', 'mpAI', 'mpRob', 'cogBill', 'humIncR', 'incPC', 'D1r', 'D5r', 'Lnf', 'Rh', 'Hc', 'Hp', 'Mc', 'pi', 's', 'pE',
+    'robCost', 'capexC', 'capexF', 'invOrb', 'invM', 'births', 'deaths', 'active', 'boost', 'cons', 'Pk', 'vAIr', 'unmKW', 'util', 'UphysPrev'];
+  for (const k of regional) D[k] = new Float64Array(NR);
+  D.util.fill(1);
+  D.lKappa = new Float64Array(NL); D.fit = new Float64Array(NL); D.wdem = new Float64Array(ND);
+  Object.assign(D, { earthTW: 0, fossilTW: 0, popTot: 0, landUse: 0, orbCostPerFlop: Infinity, jFlop: 1e-3, jFlopEarth: 1e-3, fps: 0, bestCmpR: 0,
+    aiInvest: 0, algBottleneck: 'researchers', fabFill: 1, orbChipDemand: 0, aiResFrac: 0.012, meanAlign: 0.6, taxRate: 0, machConflict: 0, rOrb: -1, spaceAccess: 0,
+    orbTWearth: 0, offworldFrac: 0, aiValuePerFlop: 0, earthCap: 1e4, protect: 0, habitWeight: 1, humanShare: 1, humanLeverage: 1, aiIncShare: 0,
+    q: 1, tau: 0, M: 0, Ctot: 0, orbCompute: 0, lnAvg: new Float64Array(ND), temp: 288, tMean: 288, machineHeat: 1, wasteK: 0, climVar: 0, climVarMean: 0, D1: 0, D5: 0, hhi: 1, scarcity: 0 });
+  return D;
+}
+function initState(S) {
+  const { x, V, P, G, T } = S;
+  x[V.lum] = 0.72; x[V.impact] = 1; x[V.mantle] = 1; x[V.land] = 0.01;
+  x[V.co2n] = 300; x[V.co2x] = 0; x[V.o2] = 0; x[V.redSink] = P.redSink0; x[V.ice] = 0;
+  x[V.prebio] = 0; x[V.alive] = 0; x[V.bio] = 0; x[V.photo] = 0; x[V.cx] = 0; x[V.div] = 0; x[V.neural] = 0; x[V.social] = 0;
+  const res0 = (r) => P.fossilTotal * G.regions[r].fossilW * (T.fossil ? 1 : 0) * (T.severeEnergy ? 0.25 : 1);
+  for (let r = 0; r < NR; r++) {
+    x[V.pop + r] = 1; x[V.hcog + r] = 0.2; x[V.natal + r] = P.natal0; x[V.inst + r] = 0.02; x[V.ineq + r] = 0.2;
+    x[V.fosRes + r] = res0(r); x[V.metRes + r] = G.regions[r].metalW * P.metalTotal; x[V.K + r] = 0;
+    for (let d = 0; d < ND; d++) x[V.A + r * ND + d] = 1;
+    x[V.alloc + r * NINV + IK] = 1;
+  }
+  x[V.alg] = 1; x[V.train] = 0.01; x[V.omega] = 0;
+  for (let p = 0; p < 6 + NR; p++) x[V.hzThr + p] = -DM.log(1 - S.prng[p].next());
+  x[V.iceN] = P.climNoise * S.prng[5].gauss();
+  const g = new RNG(mixSeed(S.seed, 13));
+  const a0 = T.alignment === 'high' ? 0.95 : T.alignment === 'low' ? 0.2 : clamp(P.baseAlign + 0.12 * g.gauss(), 0.05, 0.98);
+  S.P.baseAlign = a0;
+  x[V.lAct] = 1; x[V.lS] = 1; x[V.lA] = a0; x[V.lTh] = g.uni(0, 6.283); x[V.lM] = 0;
+}
+
+Sim.prototype.step = function () {
+  const F = this.F; F.reset();
+  worldRules(this);
+  const dt = this.chooseDt();
+  this.apply(dt);
+  const nLog = this.eventLog.length;
+  worldEvents(this, dt);
+  this.t += dt; this.steps++; this.lastDt = dt;
+  for (let i = nLog; i < this.eventLog.length; i++) this.eventLog[i][1] = this.t;   // timestamps added by the engine, not the rules
+  return dt;
+};
+Sim.prototype.chooseDt = function () {
+  const { x, F, kind, floor } = this; const n = this.n;
+  const eps = this.P.numEps || EPS, epsS = eps * EPS_STIFF / EPS, dtMin = this.P.numDtMin || DT_MIN;
+  let dt = Math.min(DT_MAX, F.tauMin);
+  for (let k = 0; k < n; k++) {
+    const r = F.rate[k]; if (r === 0 || F.free[k]) continue;
+    const s = F.stiff[k], ar = Math.abs(r);
+    if (r < 0 && x[k] <= this.minVal[k]) continue;          // pinned at its lower bound: cannot fall further
+    const scale = kind[k] === K_LOG ? 1 : Math.max(Math.abs(x[k]), floor[k], F.scale[k]);
+    const lim = eps * scale;
+    if (ar <= lim * s) continue;
+    let d = lim / (ar - lim * s);
+    if (s * d > 1) {                         // stiff regime: the semi-implicit step follows the slow manifold
+      const l2 = epsS * scale;
+      d = ar <= l2 * s ? Infinity : Math.max(d, l2 / (ar - l2 * s));
+    }
+    if (d < dt) { dt = d; this.limiter = k; }
+  }
+  if (F.hazard > 0) dt = Math.min(dt, 0.1 / F.hazard);
+  return Math.max(dtMin, dt);
+};
+Sim.prototype.apply = function (dt) {
+  const { x, F, kind } = this; const n = this.n;
+  for (let k = 0; k < n; k++) {
+    const r = F.rate[k]; if (r === 0) continue;
+    const d = r * dt / (1 + F.stiff[k] * dt);
+    const kd = kind[k];
+    if (kd === K_LOG) { x[k] *= DM.exp(d); if (x[k] < 1e-300) x[k] = 1e-300; }
+    else if (kd === K_LIN) x[k] += d;
+    else {
+      let v = x[k];
+      if (d >= 0 || -d < 0.5 * v) v += d; else v = v > 0 ? v * DM.exp(d / v) : 0;
+      if (kd === K_UNIT && v > 1) v = 1;
+      x[k] = v;
+    }
+  }
+  const V = this.V;
+  for (let r = 0; r < NR; r++) if (x[V.pop + r] < 1) x[V.pop + r] = 1;
+};
+Sim.prototype.hash = function () {       // FNV-1a over the state vector, lagged derived state, rng and time
+  const b = new Uint8Array(this.x.buffer);
+  let h = 0x811c9dc5;
+  for (let i = 0; i < b.length; i++) { h ^= b[i]; h = Math.imul(h, 0x01000193); }
+  h ^= this.rng.s; h = Math.imul(h, 0x01000193);
+  for (const g of this.prng) { h ^= g.s; h = Math.imul(h, 0x01000193); }
+  // derived quantities that carry between steps (lagged prices, incomes, utilisation…) are state too
+  for (const key of Object.keys(this.D).sort()) {
+    const v = this.D[key];
+    const arr = typeof v === 'number' ? new Float64Array([v]) : v instanceof Float64Array ? v : null;
+    if (!arr) continue;
+    const bb = new Uint8Array(arr.buffer, arr.byteOffset, arr.byteLength);
+    for (let i = 0; i < bb.length; i++) { h ^= bb[i]; h = Math.imul(h, 0x01000193); }
+  }
+  const tb = new Uint8Array(new Float64Array([this.t]).buffer);
+  for (let i = 0; i < 8; i++) { h ^= tb[i]; h = Math.imul(h, 0x01000193); }
+  return (h >>> 0).toString(16).padStart(8, '0');
+};
+
+/* =====================================================================
+   OBSERVERS — read-only. Metrics, takeover classification, epistemic
+   zone, detectors and explanations. Nothing below writes to x.
+   ===================================================================== */
+function metrics(S) {
+  const { x, V, D } = S;
+  let K = 0; for (let r = 0; r < NR; r++) K += x[V.K + r];
+  const auton = x[V.auton];
+  const m = {
+    t: S.t, temp: D.temp, o2: x[V.o2], co2: D.co2, bio: x[V.bio], cx: x[V.cx], neural: x[V.neural], alive: x[V.alive],
+    pop: D.popTot, energyTW: D.earthTW + D.orbTW, earthTW: D.earthTW, orbTW: D.orbTW, fossilTW: D.fossilTW, cleanTW: D.cleanTW,
+    compute: D.Ctot, bioCompute: D.popTot * S.P.brainFlops * sig((x[V.neural] - 5) / 0.5), kappa: D.kappa, tau: D.tau,
+    D1: D.D1, D2: aiResearchShare(S), D3: x[V.omega] + (1 - x[V.omega]) * x[V.deleg],
+    D5: D.D5, auton, deploy: x[V.deploy], reg: x[V.reg], alg: x[V.alg],
+    humanShare: D.humanShare, Y: D.Ysum, gcomm: D.gcomm, urban: D.urbanShare, orb: x[V.orb],
+    lineages: D.activeLineages, hhi: D.hhi, meanAlign: D.meanAlign, machConflict: D.machConflict, offworld: D.offworldFrac,
+    biosphere: D.landNPP / 0.5, farm: 0, industrial: 0, wage: D.wcAvg,
+  };
+  // D4 autonomous operation: machines do the operating work (cognitive & physical) and act without
+  //    per-decision authorisation. (The model does not separate "infrastructure" from other capital.)
+  m.D4 = auton * Math.sqrt(m.D1 * m.D5);
+  // D6 machine self-reproduction: share of new capital that is financed by AI-controlled income AND built
+  //    by machine labour (cognitive × physical machine shares)
+  m.D6 = (D.invTot > 0 ? D.invAI / D.invTot : 0) * m.D1 * m.D5;
+  let eff = 0; for (let r = 0; r < NR; r++) eff += Math.max(0, x[V.pop + r] - 1);   // regions sit at a floor of 1
+  m.humans = eff;
+  let fw = 0, pw = 0, ind = 0;
+  for (let r = 0; r < NR; r++) { fw += x[V.farm + r] * x[V.pop + r]; pw += x[V.pop + r]; if (x[V.pop + r] > 1e6) ind = Math.max(ind, D.unmKW[r] / Math.max(D.muscleKW[r], 1e-9)); }
+  m.farm = fw / pw; m.industrial = ind;
+  m.humanAuthority = (1 - auton) * (0.5 + 0.5 * x[V.reg]);
+  m.incPC = D.humInc / Math.max(D.popTot, 1);
+  return m;
+}
+function aiResearchShare(S) {
+  const { D } = S;
+  let h = 0; for (let r = 0; r < NR; r++) h += D.Rh[r] * (1 + 4 * S.x[S.V.sci + r]);
+  const ai = D.M * D.aiResFrac * D.q;
+  return ai + h > 0 ? ai / (ai + h) : 0;
+}
+function classify(m, hist) {
+  // hist.domYears: consecutive model years with D1..D4 ≥ 0.5 (maintained by the observer)
+  if (hist.cultureSeen && m.humans < 1000) return m.compute > 1e20 ? 'HUMANS EXTINCT · MACHINE CIVILISATION' : 'HUMANS EXTINCT';
+  // Y is Earth-surface output only (orbital industry is not in it): under machine dominance a collapsed
+  // surface economy is a suffix, not the civilisation's class
+  if (hist.lowYears >= 50 && hist.domYears < 10) return 'EARTH ECONOMY COLLAPSE (smoothed surface output < 10% of peak for ≥50 yr)';
+  if (hist.domYears >= 10) {
+    const base = (m.D5 >= 0.5 && m.D6 >= 0.5) ? 'FULL MACHINE AUTONOMY' : 'MACHINE DOMINANCE';
+    if (m.machConflict > 0.2) return base + ' · MACHINE CONFLICT';
+    if (hist.lowYears >= 50) return base + ' · EARTH ECONOMY COLLAPSED';
+    // suffixes describe human OUTCOMES (income share, numbers, habitability), not the alignment input
+    if (m.humanShare < 0.1 || m.humans < 0.01 * hist.popPeak) return base + ' · HUMANS MARGINALISED';
+    if (m.humanShare >= 0.2 && m.humans >= 0.1 * hist.popPeak && m.temp - 288 < 5) return base + ' · SYMBIOTIC';
+    return base;
+  }
+  if (m.D1 >= 0.5 && m.D2 >= 0.5) return 'MACHINE COGNITIVE DOMINANCE';
+  if (m.D1 >= 0.5) return 'MACHINE COGNITIVE MAJORITY';
+  if (m.pop > 1e5 && m.farm > 0.02) return 'HUMAN-DIRECTED';
+  return m.alive > 0.5 ? 'BIOSPHERE' : 'PREBIOTIC';
+}
+function epistemicZone(m, hist) {
+  const z = !hist.evidenceEnded ? 'OBSERVED HISTORY' : !hist.speculative ? 'MODEL-CALIBRATED TRANSITION' : 'SPECULATIVE FUTURE';
+  return hist.counterfactual ? 'COUNTERFACTUAL · ' + z : z;
+}
+// detectors: each observes state and emits a message the first time its condition holds
+const DETECTORS = [
+  ['oceans', (m) => m.temp < 373, 'Liquid-water oceans have condensed.'],
+  ['life', (m) => m.alive > 0.5, 'Self-replicating chemistry has appeared (abiogenesis).'],
+  ['goe', (m) => m.o2 > 0.01, 'Atmospheric oxygen has risen above 1% of present level.'],
+  ['euk', (m) => m.cx > 1, 'Complex (eukaryote-like) cells dominate complexity.'],
+  ['multi', (m) => m.cx > 2, 'Multicellular organisms have emerged.'],
+  ['animals', (m) => m.cx > 3, 'Complex animal body plans have emerged.'],
+  ['snowball', (m) => m.alive > 0.5 && m.ice > 0.9, 'Global glaciation: ice covers >90% of the surface.'],
+  ['cognition', (m) => m.neural > 4, 'Large-brained social animals have evolved.'],
+  ['culture', (m, S) => maxOf(S, 'culture') > 3, 'Cumulative culture: knowledge now accumulates across generations.'],
+  ['farming', (m, S) => maxOf(S, 'farm') > 0.5, 'Settled agriculture has emerged in at least one region.'],
+  ['farming3', (m, S) => countOver(S, 'farm', 0.5) >= 3, 'Agriculture is established in three or more regions.'],
+  ['cities', (m, S) => maxOf(S, 'urban') > 0.05, 'Persistent urban settlements have appeared (>5% of a region urban).'],
+  ['states', (m, S) => maxOf(S, 'inst') > 0.3, 'Durable institutions (states) have formed.'],
+  ['science', (m, S) => maxOf(S, 'sci') > 0.2, 'Scientific institutions have taken hold.'],
+  ['industry', (m) => m.industrial > 3, 'Industrial take-off: machine work exceeds 3× muscle work in a populous region.'],
+  ['pop1b', (m) => m.pop > 1e9, 'World population has exceeded one billion.'],
+  ['electric', (m, S) => maxDomain(S, ENE) > 3.2, 'Electrification is under way.'],
+  ['comm50', (m) => m.gcomm > 0.5, 'Global communication density exceeded 50%.'],
+  ['computers', (m) => m.compute > 1e9, 'Electronic computation exceeds 10⁹ FLOP/s worldwide.'],
+  ['evidenceEnds', (m, S, h) => h.evidenceEnded, 'HISTORICAL EVIDENCE ENDS. SIMULATION CONTINUES FROM MODEL ASSUMPTIONS.'],
+  ['bioVsMachine', (m) => m.compute > m.bioCompute && m.bioCompute > 0, 'Machine computation now exceeds biological (human) computation.'],
+  ['D1', (m) => m.D1 >= 0.5, 'AI systems perform the majority of cognitive work (by value).'],
+  ['D2', (m) => m.D2 >= 0.5, 'AI systems perform the majority of research.'],
+  ['D3', (m) => m.D3 >= 0.5, 'AI systems control the majority of productive capital.'],
+  ['D4', (m) => m.D4 >= 0.5, 'Most operating work is done by machines acting without per-decision human authorisation.'],
+  ['D5', (m) => m.D5 >= 0.5, 'Robots perform the majority of physical work.'],
+  ['D6', (m) => m.D6 >= 0.5, 'Most new capital is now financed by AI-controlled income and built by machine labour.'],
+  ['takeover', (m, S, h) => h.domYears >= 10, 'MACHINE DOMINANCE: all four core criteria held for 10 model years.'],
+  ['orbital', (m) => m.orb > 1e9, 'Industrial infrastructure exists off-world.'],
+  ['offworld50', (m) => m.offworld > 0.5, 'Most computation now runs off-world.'],
+  ['heat', (m, S) => S.D.wasteK > 1, 'Waste heat from energy use has warmed the planet by more than 1 K.'],
+  ['fragment', (m) => m.lineages >= 6, 'Machine civilisation has fragmented into six or more lineages.'],
+  ['machConflict', (m) => m.machConflict > 0.2, 'Open conflict between machine lineages.'],
+  ['popPeak', (m, S, h) => h.popPeak > 1e8 && m.pop < 0.5 * h.popPeak, 'Human population has fallen below half its peak (cause: see explain → Population).'],
+  ['extinct', (m, S, h) => h.cultureSeen && m.humans < 1000, 'Humanity has gone extinct (fewer than 1,000 people).'],
+  ['collapse', (m, S, h) => h.lowYears >= 50, 'Collapse of the Earth-surface economy: surface output (orbital industry excluded) below 10% of its smoothed peak for 50 model years.'],
+];
+function maxOf(S, name) { const b = S.V[name]; let m = 0; for (let r = 0; r < NR; r++) m = Math.max(m, S.x[b + r]); return m; }
+function countOver(S, name, th) { const b = S.V[name]; let c = 0; for (let r = 0; r < NR; r++) if (S.x[b + r] > th) c++; return c; }
+function maxDomain(S, d) { let m = 0; for (let r = 0; r < NR; r++) m = Math.max(m, DM.log(S.x[S.V.A + r * ND + d])); return m; }
+
+function Observer(S) {
+  this.S = S; this.fired = {}; this.events = []; this.m = null;
+  const cf = Object.keys(DEFAULT_TOGGLES).some((k) => S.T[k] !== DEFAULT_TOGGLES[k]);
+  this.h = { domYears: 0, evidenceEnded: false, speculative: false, popPeak: 0, peakY: 0, Ysm: 0, lowYears: 0, cultureSeen: false, industrySeen: false, counterfactual: cf };
+}
+Observer.prototype.update = function (dt) {
+  const S = this.S, h = this.h;
+  const m = metrics(S); m.ice = S.x[S.V.ice];
+  this.m = m;
+  h.domYears = (m.D1 >= 0.5 && m.D2 >= 0.5 && m.D3 >= 0.5 && m.D4 >= 0.5) ? h.domYears + dt : 0;
+  h.popPeak = Math.max(h.popPeak, m.pop);
+  // epistemic boundaries: the state leaves anything observed in real history on ANY dimension
+  // (thresholds ≈ the largest values observed in real history: AI shares of a few %, ~8e9 people)
+  const ti = this.fired.industry;
+  if (!h.evidenceEnded && (m.D1 >= 0.02 || m.D2 >= 0.05 || m.D3 >= 0.02 || m.D5 >= 0.05 || m.pop > 1.2e10)) h.evidenceEnded = true;
+  if (h.evidenceEnded && !h.speculative && (m.D1 >= 0.25 || m.D2 >= 0.25 || m.D3 >= 0.25 || m.D5 >= 0.25 || m.pop > 2e10)) h.speculative = true;
+  // output is compared on a 20-year smoothed basis (post-takeover SU output has short spikes)
+  h.Ysm += ((m.Y || 0) - h.Ysm) * (1 - DM.exp(-dt / 20));
+  h.peakY = Math.max(h.peakY, h.Ysm);
+  h.lowYears = ti != null && h.peakY > 0 && h.Ysm < 0.1 * h.peakY ? h.lowYears + dt : 0;
+  if (this.fired.culture != null) h.cultureSeen = true;
+  if (ti != null) h.industrySeen = true;
+  for (const [id, test, msg] of DETECTORS) {
+    if (!this.fired[id] && test(m, S, h)) { this.fired[id] = S.t; this.events.push({ id, t: S.t, msg }); }
+  }
+  m.cls = classify(m, h); m.zone = epistemicZone(m, h);
+  return m;
+};
+
+/* explanation: aggregate this step's flows for a variable by label */
+function explain(S, name, region) {
+  const v = S.L.byName[name]; if (!v) return null;
+  const F = S.F, map = new Map();
+  let lo = v.base, hi = v.base + v.count;
+  if (region != null && region >= 0 && v.scope === 'region') { lo = v.base + region; hi = lo + 1; }
+  // for regional log variables, weight each region by its share of the total
+  let tot = 0; for (let k = lo; k < hi; k++) tot += S.x[k];
+  for (let i = 0; i < F.len; i++) {
+    const k = F.li[i]; if (k < lo || k >= hi) continue;
+    let val = F.lv[i];
+    if (v.kind === K_LOG && hi - lo > 1) val *= S.x[k] / tot;
+    map.set(F.ll[i], (map.get(F.ll[i]) || 0) + val);
+  }
+  const terms = [...map.entries()].sort((a, b) => b[1] - a[1]);
+  const net = terms.reduce((a, b) => a + b[1], 0);
+  return { name, label: v.label, unit: v.unit, kind: v.kind, value: hi - lo > 1 && v.kind === K_LOG ? tot : (hi - lo > 1 ? tot : S.x[lo]),
+    rate: net, pos: terms.filter((t) => t[1] > 0), neg: terms.filter((t) => t[1] < 0).reverse(), logRate: v.kind === K_LOG };
+}
+
+/* ---------------- public API ---------------- */
+root.Worldline = {
+  Sim, Observer, RNG, DEFAULTS, DEFAULT_TOGGLES, DOMAINS, NR, NL, ND, GW, GH, metrics, explain, classify, DETECTORS,
+  create(seed, toggles, params) { const S = new Sim(seed, toggles, params); const O = new Observer(S); return { S, O }; },
+};
+})(typeof window !== 'undefined' ? window : globalThis);
+</script>
+<script id="ui">
+/* =====================================================================
+   OBSERVATORY — visualisation, interface and audio.
+   Reads simulation state only. Nothing here writes to the state vector;
+   the harness verifies that runs with and without the UI hash identically.
+   ===================================================================== */
+(function () {
+'use strict';
+const WL = window.Worldline;
+const $ = (id) => document.getElementById(id);
+const NR = WL.NR, ND = WL.ND, NL = WL.NL, GW = WL.GW, GH = WL.GH;
+const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
+const sat = (v, h) => v <= 0 ? 0 : 1 - Math.exp(-v / h);
+function fmt(v, d = 3) {
+  if (v == null || Number.isNaN(v)) return '—';
+  if (!Number.isFinite(v)) return v > 0 ? '∞' : '−∞';
+  const a = Math.abs(v);
+  if (a !== 0 && (a >= 1e5 || a < 1e-3)) { const e = Math.floor(Math.log10(a)); const m = v / Math.pow(10, e); return m.toFixed(d - 1) + 'e' + e; }
+  return (+v).toPrecision(d).replace(/\.?0+$/, (m) => m.includes('.') ? '' : m);
+}
+const pct = (v) => (v * 100).toFixed(v < 0.1 ? 1 : 0) + '%';
+
+/* ---------------- world lifecycle ---------------- */
+const TOGGLE_LABELS = [
+  ['fossil', 'Fossil fuels'], ['science', 'Scientific institutions'], ['globalComm', 'Global communication'],
+  ['semiScaling', 'Semiconductor scaling'], ['aiRecursive', 'AI recursive research'], ['robotics', 'Robotics'],
+  ['aiAutonomy', 'AI autonomy'], ['aiResources', 'AI capital ownership / resource acquisition'], ['resourceLimits', 'Resource constraints (depletion)'],
+];
+let S = null, O = null, lastEventLog = 0, samples = [], zoneTimes = {}, bannerUntil = 0;
+function readToggles() {
+  const t = {};
+  for (const [k] of TOGGLE_LABELS) t[k] = $('tg_' + k).checked;
+  t.severeEnergy = $('severe').checked; t.alignment = $('align').value;
+  return t;
+}
+function newWorld() {
+  const seed = (parseInt($('seed').value, 10) >>> 0) || 0;
+  $('seed').value = seed;
+  const w = WL.create(seed, readToggles());
+  S = w.S; O = w.O; lastEventLog = 0; samples = []; zoneTimes = {}; bannerUntil = 0; errorShown = false;
+  $('err').textContent = ''; $('history').innerHTML = '';
+  buildTexel();
+  sample(true);
+}
+
+/* ---------------- controls ---------------- */
+let running = true, speed = 1, maxMode = false, zoom = 'deep', selected = 'pop', errorShown = false;
+function buildControls() {
+  const tg = $('toggles');
+  tg.innerHTML = TOGGLE_LABELS.map(([k, l]) => `<label><input type="checkbox" id="tg_${k}" checked> ${l}</label>`).join('');
+  document.querySelectorAll('[data-speed]').forEach((b) => b.addEventListener('click', () => {
+    const v = b.dataset.speed; maxMode = v === 'max'; speed = maxMode ? 1 : +v; running = true; audio.resume(); refreshButtons(); }));
+  document.querySelectorAll('[data-zoom]').forEach((b) => b.addEventListener('click', () => { zoom = b.dataset.zoom; refreshButtons(); }));
+  $('bPause').addEventListener('click', () => { running = false; refreshButtons(); });
+  $('bPlay').addEventListener('click', () => { running = true; audio.resume(); refreshButtons(); });
+  $('bStep').addEventListener('click', () => { running = false; stepSim(1); refreshButtons(); });
+  $('bReset').addEventListener('click', () => { newWorld(); audio.resume(); });
+  $('seed').addEventListener('keydown', (e) => { if (e.key === 'Enter') newWorld(); });
+  $('bAudio').addEventListener('click', () => { audio.init(); refreshButtons(); });
+  $('bMute').addEventListener('click', () => { audio.toggleMute(); refreshButtons(); });
+  $('vol').addEventListener('input', (e) => audio.setVolume(+e.target.value));
+  refreshButtons();
+}
+function refreshButtons() {
+  document.querySelectorAll('[data-speed]').forEach((b) => b.classList.toggle('on', running && (maxMode ? b.dataset.speed === 'max' : (!maxMode && +b.dataset.speed === speed))));
+  document.querySelectorAll('[data-zoom]').forEach((b) => b.classList.toggle('on', b.dataset.zoom === zoom));
+  $('bPause').classList.toggle('on', !running); $('bPlay').classList.toggle('on', running);
+  $('bAudio').classList.toggle('on', audio.ready); $('bAudio').textContent = audio.ready ? 'ON' : 'ENABLE';
+  $('bMute').classList.toggle('on', audio.muted);
+}
+
+/* ---------------- stepping (the only place the simulation advances) ---------------- */
+let stepsThisSecond = 0, stepsPerSec = 0, yearsThisSecond = 0, yearsPerSec = 0, secT = performance.now();
+function stepSim(n) {
+  try {
+    for (let i = 0; i < n; i++) {
+      const t0 = S.t; const dt = S.step(); O.update(dt);
+      stepsThisSecond++; yearsThisSecond += S.t - t0;
+    }
+  } catch (e) {
+    running = false; refreshButtons();
+    if (!errorShown) { $('err').textContent = 'Simulation halted: ' + e.message; errorShown = true; }
+  }
+}
+
+/* ---------------- globe texture from state ---------------- */
+let texel = null;
+function buildTexel() {
+  const G = S.G, n = GW * GH;
+  texel = { lat: new Float32Array(n), noise: new Float32Array(n), col: new Uint8ClampedArray(n * 3), light: new Float32Array(n), lightB: new Float32Array(n) };
+  for (let j = 0; j < GH; j++) for (let i = 0; i < GW; i++) {
+    const k = j * GW + i; texel.lat[k] = Math.abs(90 - (j + 0.5) / GH * 180);
+    let h = (k * 2654435761) >>> 0; h ^= h >>> 13; h = Math.imul(h, 0x5bd1e995) >>> 0; texel.noise[k] = (h >>> 8) / 16777216;
+  }
+}
+function paintTexture() {
+  const G = S.G, x = S.x, V = S.V, D = S.D, T = texel;
+  const land = x[V.land], idx = clamp(Math.round(land / 0.29 * 100), 0, 100);
+  const seaLevel = G.landLevels[idx];
+  const tm = D.temp, ice = x[V.ice], latIce = Math.asin(clamp(1 - ice, -1, 1)) * 180 / Math.PI;
+  const magma = clamp((tm - 360) / 300, 0, 1);
+  const oceanLife = clamp(D.oceanNPP * 1.5, 0, 1);
+  const warm = clamp((tm - 270) / 40, 0, 1);
+  const landLife = clamp(D.landNPP * 2.2, 0, 1);
+  for (let k = 0; k < GW * GH; k++) {
+    const e = G.elev[k], r = G.region[k], lat = T.lat[k], nz = T.noise[k];
+    let R, Gc, B, L = 0, LB = 0;
+    const isLand = e >= seaLevel;
+    if (!isLand) {
+      R = 8 + 10 * warm; Gc = 30 + 30 * warm + 30 * oceanLife; B = 60 + 40 * warm;
+      const depth = clamp((seaLevel - e) * 1.5, 0, 1); Gc *= 1 - 0.35 * depth; B *= 1 - 0.25 * depth;
+    } else {
+      R = 70 + 30 * nz; Gc = 62 + 20 * nz; B = 52 + 10 * nz;           // bare rock
+      const reg = r >= 0 ? r : 0;
+      const nat = D.natFrac[reg] || 1;
+      const veg = landLife * nat;
+      R = R * (1 - veg) + 38 * veg; Gc = Gc * (1 - veg) + 96 * veg; B = B * (1 - veg) + 44 * veg;
+      if (r >= 0 && D.active[r]) {
+        const farm = D.farmLandR[r], mach = D.machLandR[r], urb = x[V.urban + r];
+        if (nz < farm) { R = 150; Gc = 128; B = 70; }                    // farmland (ochre)
+        else if (nz > 1 - mach) { R = 120; Gc = 90; B = 170; }            // machine land (violet)
+        else if (nz > 1 - mach - urb * 0.25) { R = 110; Gc = 110; B = 115; } // built-up
+        // night lights: energy use per area; colour by machine share of work
+        const eA = D.eTW[r] / Math.max(G.regions[r].area, 1e-3);
+        L = clamp((Math.log10(eA + 1e-9) + 3.5) / 6, 0, 1) * (0.25 + 0.75 * clamp(urb * 3 + mach * 3, 0, 1)) * (nz < 0.25 + urb + mach ? 1 : 0.25);
+        LB = clamp(0.5 * (D.D1r[r] + D.D5r[r]), 0, 1);
+      }
+    }
+    if (lat > latIce) { const w = clamp((lat - latIce) / 4, 0, 1); R += (225 - R) * w; Gc += (235 - Gc) * w; B += (245 - B) * w; }
+    if (magma > 0) { R = R * (1 - magma) + 230 * magma; Gc = Gc * (1 - magma) + 90 * magma * (0.6 + 0.4 * nz); B = B * (1 - magma) + 30 * magma; }
+    T.col[k * 3] = R; T.col[k * 3 + 1] = Gc; T.col[k * 3 + 2] = B; T.light[k] = L; T.lightB[k] = LB;
+  }
+}
+
+/* ---------------- globe projection ---------------- */
+const cv = $('globe'), cx2 = cv.getContext('2d');
+let proj = null;
+function buildProjection(Rpx) {
+  const size = 2 * Rpx, n = size * size, tilt = 0.4;
+  const row = new Int16Array(n).fill(-1), lon = new Float32Array(n), shade = new Float32Array(n);
+  const sun = [-0.55, -0.35, 0.76]; const sl = Math.hypot(...sun); sun[0] /= sl; sun[1] /= sl; sun[2] /= sl;
+  for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) {
+    const nx = (x + 0.5 - Rpx) / Rpx, ny = (y + 0.5 - Rpx) / Rpx, d2 = nx * nx + ny * ny;
+    if (d2 >= 1) continue;
+    const nz = Math.sqrt(1 - d2), k = y * size + x;
+    // tilt around x axis
+    const y2 = ny * Math.cos(tilt) - nz * Math.sin(tilt), z2 = ny * Math.sin(tilt) + nz * Math.cos(tilt);
+    const lat = Math.asin(clamp(-y2, -1, 1));
+    row[k] = clamp(Math.floor((0.5 - lat / Math.PI) * GH), 0, GH - 1);
+    lon[k] = Math.atan2(nx, z2) / (2 * Math.PI) * GW;
+    shade[k] = Math.max(0, nx * sun[0] + ny * sun[1] + nz * sun[2]);
+  }
+  const off = document.createElement('canvas'); off.width = size; off.height = size;
+  proj = { R: Rpx, size, row, lon, shade, off, octx: off.getContext('2d'), img: off.getContext('2d').createImageData(size, size), tilt };
+}
+function drawGlobe(rot) {
+  const P = proj, T = texel, data = P.img.data, n = P.size * P.size;
+  const rotCols = rot / (2 * Math.PI) * GW;
+  for (let k = 0; k < n; k++) {
+    const j = P.row[k]; const o = k * 4;
+    if (j < 0) { data[o + 3] = 0; continue; }
+    let c = Math.floor(P.lon[k] + rotCols) % GW; if (c < 0) c += GW;
+    const t = j * GW + c, s = P.shade[k];
+    const day = 0.18 + 0.82 * s, night = (1 - s) * (1 - s);
+    const L = T.light[t] * night, lb = T.lightB[t];
+    data[o] = T.col[t * 3] * day + L * (255 * (1 - lb) + 170 * lb);
+    data[o + 1] = T.col[t * 3 + 1] * day + L * (185 * (1 - lb) + 225 * lb);
+    data[o + 2] = T.col[t * 3 + 2] * day + L * (90 * (1 - lb) + 255 * lb);
+    data[o + 3] = 255;
+  }
+  P.octx.putImageData(P.img, 0, 0);
+}
+function projectPoint(px, py, pz, rot, cx, cy, R, lift = 1) {
+  // rotate about the polar axis (rot), then tilt, then orthographic projection
+  const lon = Math.atan2(py, px) - rot, rr = Math.hypot(px, py);   // same convention as the texture lookup
+  const X = rr * Math.sin(lon), Z0 = rr * Math.cos(lon), Y0 = -pz;
+  const t = proj.tilt, Y = Y0 * Math.cos(t) + Z0 * Math.sin(t), Z = -Y0 * Math.sin(t) + Z0 * Math.cos(t);
+  return { x: cx + X * R * lift, y: cy + Y * R * lift, z: Z };
+}
+
+/* ---------------- overlays (each tied to state) ---------------- */
+const ZOOMS = { deep: 0.36, civ: 0.40, ind: 0.40, ai: 0.37, post: 0.24 };
+function drawStage(wall) {
+  const W = cv.width, H = cv.height, ctx = cx2;
+  ctx.clearRect(0, 0, W, H);
+  const R = Math.round(H * ZOOMS[zoom] * (W / H > 1.5 ? 1 : 0.8));
+  if (!proj || proj.R !== R) buildProjection(R);
+  const cx = W / 2, cy = H / 2 + 10, rot = wall * 0.00006 + 1.3;
+  const x = S.x, V = S.V, D = S.D, m = O.m || {};
+  // off-world energy capture: swarm particles ∝ log orbital power
+  const orbTW = D.orbTW || 0;
+  if (orbTW > 1e-3) {
+    const nSw = Math.min(900, Math.floor(60 * Math.log10(1 + orbTW * 1000)));
+    for (let i = 0; i < nSw; i++) {
+      const a = i * 2.39996 + wall * 0.00002 * (1 + (i % 7)), rr = R * (1.9 + 1.4 * ((i * 0.618) % 1));
+      ctx.fillStyle = D.machConflict > 0.1 && i % 9 === 0 ? 'rgba(255,93,108,.7)' : 'rgba(181,140,255,.55)';
+      ctx.fillRect(cx + Math.cos(a) * rr, cy + Math.sin(a) * rr * 0.42, 1.6, 1.6);
+    }
+  }
+  // atmosphere: O2 (blue) vs greenhouse/heat (orange)
+  const o2 = x[V.o2], hot = clamp((D.temp - 290) / 40, 0, 1);
+  const ag = ctx.createRadialGradient(cx, cy, R * 0.98, cx, cy, R * 1.12);
+  ag.addColorStop(0, `rgba(${Math.round(90 + 150 * hot)},${Math.round(140 + 40 * (1 - hot))},${Math.round(255 * (0.3 + 0.7 * clamp(o2, 0, 1)) * (1 - 0.6 * hot))},0.55)`);
+  ag.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = ag; ctx.beginPath(); ctx.arc(cx, cy, R * 1.12, 0, 7); ctx.fill();
+  // planet
+  paintTexture(); drawGlobe(rot);
+  ctx.drawImage(proj.off, cx - R, cy - R);
+  // regions: projected centres
+  const G = S.G, pts = [];
+  for (let r = 0; r < NR; r++) { const g = G.regions[r]; pts.push(projectPoint(g.x, g.y, g.z, rot, cx, cy, R)); }
+  // communication network: arcs between active regions (alpha = global communication × activity)
+  const gcomm = D.gcomm || 0;
+  if (gcomm > 0.02) {
+    ctx.lineWidth = 1;
+    for (let a = 0; a < NR; a++) for (let b = a + 1; b < NR; b++) {
+      if (!D.active[a] || !D.active[b]) continue;
+      const nb = G.regions[a].nbr[b], w = nb > 0 ? 0.6 : gcomm * 0.5;
+      if (w * gcomm < 0.04 || pts[a].z < -0.1 || pts[b].z < -0.1) continue;
+      const pa = pts[a], pb = pts[b], mx = (pa.x + pb.x) / 2, my = (pa.y + pb.y) / 2, lift = 1 + 0.25 * Math.hypot(pa.x - pb.x, pa.y - pb.y) / R;
+      const qx = cx + (mx - cx) * lift, qy = cy + (my - cy) * lift;
+      ctx.strokeStyle = `rgba(95,212,255,${(0.12 + 0.5 * w * gcomm).toFixed(3)})`;
+      ctx.beginPath(); ctx.moveTo(pa.x, pa.y); ctx.quadraticCurveTo(qx, qy, pb.x, pb.y); ctx.stroke();
+      // moving packet = information/resource flow (speed is visual only)
+      const u = ((wall * 0.0004 + a * 0.37 + b * 0.11) % 1);
+      const px = (1 - u) * (1 - u) * pa.x + 2 * (1 - u) * u * qx + u * u * pb.x, py = (1 - u) * (1 - u) * pa.y + 2 * (1 - u) * u * qy + u * u * pb.y;
+      ctx.fillStyle = 'rgba(234,246,255,.8)'; ctx.fillRect(px - 1, py - 1, 2, 2);
+    }
+  }
+  // cities (amber: radius ∝ productive capacity), compute (blue-white), robots (violet), conflict (red)
+  for (let r = 0; r < NR; r++) {
+    const p = pts[r]; if (p.z < 0.05 || !D.active[r]) continue;
+    const Y = D.Y[r], comp = x[V.comp + r], rob = x[V.rob + r], urb = x[V.urban + r];
+    if (Y > 1e5 && urb > 0.01) { const rr = clamp((Math.log10(Y) - 5) * 1.8, 1, 14) * (0.4 + p.z * 0.6);
+      ctx.fillStyle = `rgba(255,181,71,${0.25 + 0.5 * clamp(urb * 2, 0, 1)})`; ctx.beginPath(); ctx.arc(p.x, p.y, rr, 0, 7); ctx.fill(); }
+    if (comp > 1e9) { const rr = clamp((Math.log10(comp) - 9) * 0.8, 1, 16);
+      ctx.fillStyle = 'rgba(214,240,255,.85)'; ctx.fillRect(p.x + 3, p.y - rr / 2 - 3, rr * 0.7, rr * 0.7);
+      ctx.strokeStyle = 'rgba(95,212,255,.8)'; ctx.strokeRect(p.x + 3, p.y - rr / 2 - 3, rr * 0.7, rr * 0.7); }
+    if (rob > 1e4) { const rr = clamp((Math.log10(rob) - 4) * 1.2, 1, 14);
+      ctx.strokeStyle = 'rgba(181,140,255,.9)'; ctx.beginPath();
+      for (let i = 0; i < 6; i++) { const a = i * Math.PI / 3; ctx.lineTo(p.x - 6 + Math.cos(a) * rr * 0.5, p.y + 6 + Math.sin(a) * rr * 0.5); }
+      ctx.closePath(); ctx.stroke(); }
+    const confl = x[V.confl + r];
+    if (confl > 0.15) { ctx.strokeStyle = `rgba(255,93,108,${(confl * (0.5 + 0.5 * Math.sin(wall * 0.006 + r))).toFixed(3)})`; ctx.beginPath(); ctx.arc(p.x, p.y, 10 + 6 * confl, 0, 7); ctx.stroke(); }
+  }
+  // orbital industry: ring objects ∝ log off-world capital
+  const orb = x[V.orb];
+  if (orb > 1e6) {
+    const nO = Math.min(260, Math.floor(18 * Math.log10(orb / 1e6)));
+    ctx.fillStyle = 'rgba(234,246,255,.9)';
+    for (let i = 0; i < nO; i++) { const a = i * 2.39996 + wall * 0.0003; const ex = Math.cos(a) * R * 1.35, ey = Math.sin(a) * R * 0.38; if (ey < 0 && Math.hypot(ex, ey * 3) < R) continue; ctx.fillRect(cx + ex, cy + ey, 1.8, 1.8); }
+  }
+  // AI lineages: arcs around the planet, angle = goal orientation, length = compute share
+  if ((D.Ctot || 0) > 1e15 && x[V.deploy] > 0.01) {
+    for (let i = 0; i < NL; i++) {
+      if (x[V.lAct + i] < 0.5) continue;
+      const s = x[V.lS + i], th = x[V.lTh + i], al = x[V.lA + i];
+      ctx.strokeStyle = `hsla(${Math.round(260 - 160 * al)},90%,65%,.85)`; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.arc(cx, cy, R * 1.2, th, th + Math.max(0.03, s * Math.PI * 2)); ctx.stroke();
+    }
+    ctx.lineWidth = 1;
+  }
+  // overlay text
+  $('cls').textContent = m.cls || ''; $('cls').style.color = (m.cls || '').includes('MACHINE') ? 'var(--violet)' : 'var(--amber)';
+}
+
+/* ---------------- samples & chart ---------------- */
+function sample(force) {
+  const m = O.m; if (!m) return;
+  const last = samples[samples.length - 1];
+  if (!force && last && m.t - last.t <= 0) return;
+  samples.push({ t: m.t, D1: m.D1, D2: m.D2, D3: m.D3, D4: m.D4, D5: m.D5, D6: m.D6, H: m.humanShare, pop: m.pop, E: m.energyTW, C: m.compute, temp: m.temp, gc: m.gcomm, farm: m.farm, urb: m.urban, auth: m.humanAuthority, bio: m.biosphere, off: m.offworld });
+  if (samples.length > 24000) samples = samples.filter((_, i) => i % 2 === 0 || i > samples.length - 2000);
+}
+function chartWindow() {
+  const f = O.fired, t = S.t;
+  const w = (a, before, after) => a == null ? null : [a - before, after == null ? t : Math.min(t, a + after)];
+  switch (zoom) {
+    case 'civ': return w(f.culture ?? f.farming, 5000, null) || [Math.max(0, t - 2e8), t];
+    case 'ind': return w(f.industry ?? f.farming, 300, null) || [Math.max(0, t - 20000), t];
+    case 'ai': return w(f.computers ?? f.electric, 30, 400) || [Math.max(0, t - 2000), t];
+    case 'post': return w(f.takeover ?? f.D1, 60, null) || [Math.max(0, t - 500), t];
+    default: return [0, Math.max(t, 1)];
+  }
+}
+const SERIES = [
+  ['D1', 'cognitive', '#5fd4ff'], ['D2', 'research', '#9be7ff'], ['D3', 'capital', '#ffb547'], ['D4', 'autonomous operation', '#ff8a47'],
+  ['D5', 'physical', '#b58cff'], ['D6', 'AI-financed machine-built capital', '#e0b3ff'], ['H', 'human income share', '#6fdc8c'],
+];
+const LOGS = [['pop', 'population', '#eaf6ff', 1e3, 1e11], ['E', 'energy TW', '#ffd27a', 1e-4, 1e9], ['C', 'compute', '#7fa7ff', 1e6, 1e40]];
+function drawChart() {
+  const c = $('chart'), ctx = c.getContext('2d'), W = c.width, H = c.height;
+  ctx.clearRect(0, 0, W, H);
+  const [t0, t1] = chartWindow(); const span = Math.max(t1 - t0, 1e-6);
+  const L = 44, Rr = W - 150, T = 10, B = H - 22;
+  const X = (t) => L + (t - t0) / span * (Rr - L), Yv = (v) => B - clamp(v, 0, 1) * (B - T);
+  // epistemic zones as background bands (observed / calibrated / speculative)
+  const ev = O.fired.evidenceEnds, sp = zoneTimes.speculative;
+  const band = (a, b, col) => { const xa = clamp(X(a), L, Rr), xb = clamp(X(b), L, Rr); if (xb > xa) { ctx.fillStyle = col; ctx.fillRect(xa, T, xb - xa, B - T); } };
+  band(t0, ev ?? t1, 'rgba(111,220,140,.05)'); if (ev != null) band(ev, sp ?? t1, 'rgba(255,181,71,.07)'); if (sp != null) band(sp, t1, 'rgba(181,140,255,.08)');
+  ctx.strokeStyle = '#1b2a3a'; ctx.strokeRect(L, T, Rr - L, B - T);
+  ctx.strokeStyle = '#26394d'; ctx.setLineDash([3, 3]); ctx.beginPath(); ctx.moveTo(L, Yv(0.5)); ctx.lineTo(Rr, Yv(0.5)); ctx.stroke(); ctx.setLineDash([]);
+  // visible samples
+  let i0 = 0; while (i0 < samples.length && samples[i0].t < t0) i0++;
+  const vis = samples.slice(Math.max(0, i0 - 1));
+  const line = (get, col, w = 1.3) => { ctx.strokeStyle = col; ctx.lineWidth = w; ctx.beginPath(); let st = false;
+    for (const s of vis) { const v = get(s); if (v == null || !Number.isFinite(v)) continue; const px = X(s.t), py = Yv(v); if (!st) { ctx.moveTo(px, py); st = true; } else ctx.lineTo(px, py); } ctx.stroke(); };
+  for (const [k, , col, lo, hi] of LOGS) line((s) => (Math.log10(Math.max(s[k], lo)) - Math.log10(lo)) / (Math.log10(hi) - Math.log10(lo)), col + '66', 1);
+  for (const [k, , col] of SERIES) line((s) => s[k], col, 1.4);
+  // legend & axes
+  ctx.font = '10px ui-monospace, Menlo, Consolas, monospace'; ctx.textBaseline = 'middle';
+  let ly = T + 6;
+  for (const [k, name, col] of SERIES) { ctx.fillStyle = col; ctx.fillRect(Rr + 10, ly - 3, 10, 3); ctx.fillStyle = '#7d93a8'; ctx.fillText(name, Rr + 24, ly); ly += 13; }
+  for (const [k, name, col] of LOGS) { ctx.fillStyle = col + '99'; ctx.fillRect(Rr + 10, ly - 3, 10, 2); ctx.fillStyle = '#4b6075'; ctx.fillText(name + ' (log)', Rr + 24, ly); ly += 13; }
+  ctx.fillStyle = '#4b6075'; ctx.fillText('50%', 18, Yv(0.5));
+  ctx.fillText(timeLabel(t0), L, H - 9); const tl = timeLabel(t1); ctx.fillText(tl, Rr - ctx.measureText(tl).width, H - 9);
+}
+
+/* ---------------- time & zone text ---------------- */
+function timeLabel(t) {
+  const f = O.fired.farming;
+  if (f != null && t >= f - 50000) { const y = t - f; return (y >= 0 ? 'yr ' : 'yr −') + Math.round(Math.abs(y)).toLocaleString('en-US') + ' (farming = 0)'; }
+  if (t >= 1e9) return (t / 1e9).toFixed(3) + ' Gyr'; if (t >= 1e6) return (t / 1e6).toFixed(1) + ' Myr'; return Math.round(t).toLocaleString('en-US') + ' yr';
+}
+function updateTimeText() {
+  $('tBig').textContent = 'T + ' + (S.t / 1e9).toFixed(6) + ' Gyr';
+  const f = O.fired.farming;
+  $('tSub').textContent = f != null ? `${Math.round(S.t - f).toLocaleString('en-US')} yr since first farming · dt ${fmt(S.lastDt)} yr` : `before agriculture · dt ${fmt(S.lastDt)} yr`;
+  const z = O.m.zone, el = $('zone');
+  el.textContent = z; el.className = z.endsWith('OBSERVED HISTORY') ? 'zone-obs' : z.endsWith('SPECULATIVE FUTURE') ? 'zone-spec' : 'zone-cal';
+  if (O.h.speculative && zoneTimes.speculative == null) zoneTimes.speculative = S.t;
+}
+
+/* ---------------- panels ---------------- */
+let fps = 0, frames = 0;
+const TK = [
+  ['D1', 'Cognitive work', 'AI share of the value of cognitive work'],
+  ['D2', 'Research', 'AI share of effective research effort'],
+  ['D3', 'Capital', 'AI-owned + AI-managed share of productive capital'],
+  ['D4', 'Autonomous operation', 'autonomy × √(machine cognitive share × machine physical share)'],
+  ['D5', 'Physical work', 'robot share of physical work value'],
+  ['D6', 'Machine self-reproduction', 'share of new capital financed by AI-controlled income × machine cognitive × machine physical share'],
+];
+function updatePanels() {
+  const m = O.m, D = S.D, x = S.x, V = S.V;
+  $('perf').innerHTML = kv([
+    ['render FPS', fps.toFixed(0)], ['sim steps / s', stepsPerSec.toFixed(0)], ['time scale', fmt(yearsPerSec) + ' yr/s'],
+    ['speed', maxMode ? 'MAX' : speed + '× (' + (speed * 30) + ' steps/s)'], ['seed', S.seed], ['steps', S.steps.toLocaleString('en-US')], ['last dt', fmt(S.lastDt) + ' yr'],
+  ]);
+  $('takeover').innerHTML = TK.map(([k, name, def]) => { const v = m[k] || 0; const col = v >= 0.5 ? 'var(--violet)' : 'var(--cyan)';
+    return `<div class="bar" data-x="${k}" title="${def}"><span>${name}</span><div class="track"><div class="fill" style="width:${(v * 100).toFixed(1)}%;background:${col}"></div><div class="mark"></div></div><span class="v">${pct(v)}</span></div>`; }).join('');
+  $('takeNote').textContent = `Classification: ${m.cls}. Machine dominance = D1–D4 ≥ 50% for 10 model years (held ${fmt(O.h.domYears)} yr). Human authority index ${pct(m.humanAuthority)}.`;
+  let met = 0, met0 = 0, util = 0, uw = 0;
+  for (let r = 0; r < NR; r++) { met += x[V.metRes + r]; met0 += S.G.regions[r].metalW * S.P.metalTotal; if (D.active[r]) { util += (D.util[r] ?? 1) * x[V.comp + r]; uw += x[V.comp + r]; } }
+  const resilience = (1 - m.machConflict) * (1 - (D.scarcity || 0)) * Math.min(1, (m.lineages || 1) / 3) * (m.pop > 1e6 || m.compute > 1e20 ? 1 : 0.3);
+  $('post').innerHTML = kv([
+    ['machine population', fmt(D.M) + ' worker-eq', 'machinePop'], ['AI lineages', m.lineages + ' active (cap 12)', 'lineages'], ['centralisation (HHI)', fmt(m.hhi, 2), 'lineages'],
+    ['compute running AI (powered × deployed)', uw > 0 ? pct(util / uw * x[V.deploy]) : '—', 'deploy'], ['machine cooperation (1 − conflict)', pct(1 - m.machConflict), 'lineages'], ['machine conflict', pct(m.machConflict), 'lineages'],
+    ['total energy capture', fmt(m.energyTW) + ' TW', 'energy'], ['  … share of sunlight', fmt(m.energyTW / 3.8e14) , 'orb'],
+    ['human population', fmt(m.pop), 'pop'], ['human income share', pct(m.humanShare), 'humanShare'], ['human authority index (derived)', pct(m.humanAuthority), 'authority'],
+    ['biosphere (land productivity)', pct(Math.min(1, m.biosphere)), 'bio'], ['Earth compute', fmt(m.compute - (D.orbCompute || 0)) + ' FLOP/s', 'comp'],
+    ['orbital compute', fmt(D.orbCompute || 0) + ' FLOP/s', 'orb'], ['off-world industry', fmt(x[V.orb]) + ' SU', 'orb'],
+    ['algorithm progress', fmt((W_rate('alg')) * 100, 2) + ' %/yr', 'alg'], ['bottleneck (algorithms)', D.algBottleneck || '—', 'alg'],
+    ['resource exhaustion (ores)', pct(1 - met / Math.max(met0, 1)), 'metRes'], ['resilience index (derived: no conflict × no scarcity × ≥3 lineages)', pct(resilience), 'lineages'],
+  ]);
+  $('state').innerHTML = kv([
+    ['surface temperature', fmt(m.temp, 4) + ' K', 'temp'], ['atmospheric O₂', fmt(m.o2) + ' PAL', 'o2'], ['CO₂', fmt(m.co2) + ' × pre-ind.', 'co2'],
+    ['biomass', fmt(m.bio) + ' × present', 'bio'], ['biological complexity', fmt(m.cx), 'cx'], ['neural capacity', fmt(m.neural), 'neural'],
+    ['population', fmt(m.pop), 'pop'], ['farming share', pct(m.farm), 'farm'], ['urban share', pct(m.urban), 'urban'],
+    ['income / person', fmt(m.incPC) + ' SU', 'incPC'], ['energy use', fmt(m.energyTW) + ' TW', 'energy'], ['fossil use', fmt(m.fossilTW) + ' TW', 'fossil'],
+    ['global communication', pct(m.gcomm), 'gcomm'], ['technology (all domains)', 'explain', 'A'], ['compute', fmt(m.compute) + ' FLOP/s', 'comp'], ['AI capability κ', fmt(m.kappa, 4) + ' log₁₀ FLOP', 'kappa'],
+    ['task coverage τ', pct(m.tau), 'kappa'], ['algorithmic efficiency', fmt(m.alg) + '×', 'alg'], ['AI deployment', pct(m.deploy), 'deploy'],
+    ['AI autonomy', pct(m.auton), 'auton'], ['AI regulation', pct(m.reg), 'reg'], ['AI-owned capital', pct(x[V.omega]), 'omega'], ['capital delegated to AI', pct(x[V.deleg]), 'deleg'],
+    ['mean lineage alignment', pct(m.meanAlign), 'lA'], ['chip fab capacity', fmt(x[V.fab]) + ' SU/yr', 'fab'], ['launch capacity', fmt(x[V.launch]) + ' SU/yr', 'launch'],
+  ]);
+  renderExplain();
+}
+function W_rate(name) { const e = WL.explain(S, name); return e ? e.rate : 0; }
+function kv(rows) { return rows.map(([k, v, x]) => `<div data-x="${x || ''}">${k}</div><div>${v}</div>`).join(''); }
+document.addEventListener('click', (e) => { const el = e.target.closest('[data-x]'); if (el && el.dataset.x) { selected = el.dataset.x; renderExplain(); } });
+
+// sum this step's flow terms over an arbitrary set of state indices (weights convert units)
+function flowTerms(pred, weight) {
+  const F = S.F, map = new Map();
+  for (let i = 0; i < F.len; i++) { const k = F.li[i]; if (!pred(k)) continue; const w = weight ? weight(k) : 1; map.set(F.ll[i], (map.get(F.ll[i]) || 0) + F.lv[i] * w); }
+  return map;
+}
+function derivedResult(label, value, unit, map, note, logRate = false) {
+  const list = [...map.entries()].filter((t) => t[1] !== 0); const rate = list.reduce((a, t) => a + t[1], 0);
+  return { label, value, unit, rate, logRate, pos: list.filter((t) => t[1] > 0).sort((a, b) => b[1] - a[1]), neg: list.filter((t) => t[1] < 0).sort((a, b) => a[1] - b[1]), note };
+}
+const DERIVED = {
+  temp: () => {
+    const x = S.x, V = S.V, D = S.D, co2 = x[V.co2n] + x[V.co2x], P = S.P;
+    const m = new Map(); const add = (l, v) => m.set(l, (m.get(l) || 0) + v);
+    for (const [l, v] of flowTerms((k) => k === V.co2n)) add('CO₂: ' + l, v * P.climSens * x[V.co2n] / co2);
+    for (const [l, v] of flowTerms((k) => k === V.co2x)) add('CO₂: ' + l, v * P.climSens / co2);
+    const dTdIce = -255 * 0.25 * 0.33 / 0.7;
+    for (const [l, v] of flowTerms((k) => k === V.ice)) add('albedo: ' + l, v * dTdIce);
+    for (const [l, v] of flowTerms((k) => k === V.lum)) add('Sun: ' + l, v * 255 * 0.25);
+    return derivedResult('Surface temperature', D.temp, 'K', m, `Levels now: greenhouse ${fmt(P.climSens * Math.log(co2), 3)} K from CO₂ (${fmt(co2, 3)}× pre-industrial), ice cover ${pct(x[V.ice])}, waste heat +${fmt(D.wasteK, 3)} K from ${fmt(D.earthTW)} TW, glacial excursion ${fmt(D.temp - D.tMean, 2)} K. Rates are slow-cycle terms; waste heat follows energy use directly.`);
+  },
+  energy: () => {
+    const x = S.x, V = S.V, D = S.D; const m = new Map(); const add = (l, v) => m.set(l, (m.get(l) || 0) + v);
+    for (const [l, v] of flowTerms((k) => k >= V.clnCap && k < V.clnCap + NR)) add('clean/fusion capacity: ' + l, v);
+    for (const [l, v] of flowTerms((k) => k >= V.fosCap && k < V.fosCap + NR, (k) => D.fosTWr[k - V.fosCap] / Math.max(x[k], 1e-12))) add('fossil (usable): ' + l, v);
+    for (const [l, v] of flowTerms((k) => k === V.orb)) add('off-world: ' + l, v * D.orbTW / Math.max(x[V.orb], 1));
+    return derivedResult('Total energy capture', D.earthTW + D.orbTW, 'TW', m, `Earth ${fmt(D.earthTW)} TW (fossil ${fmt(D.fossilTW)}, clean/fusion ${fmt(D.cleanTW)}), off-world ${fmt(D.orbTW)} TW. Habitability weight on Earth's build-out ${pct(D.habitWeight)}.`);
+  },
+  incPC: () => { const D = S.D, P = D.popTot || 1, w = D.wageBill, c = Math.max(D.humCapSum, 0), tr = D.transSum;
+    return { label: 'Human income per person', value: D.humInc / P, unit: 'SU/yr', rate: null, upstream: true, pos: [['wages', w / P], ['returns on human-owned capital', c / P], ['transfers from AI (alignment, taxes)', tr / P]], neg: [], note: 'Composition of human income (levels, SU per person-year). Food is land-limited (or energy-limited in controlled-environment farms), so high income does not guarantee food adequacy.' }; },
+  humanShare: () => { const D = S.D, tot = D.humInc + D.aiInc;
+    return { label: 'Human share of income', value: D.humanShare, unit: 'share', rate: null, upstream: true, pos: [['wages', D.wageBill / tot], ['human-owned capital', Math.max(D.humCapSum, 0) / tot], ['transfers from AI', D.transSum / tot]], neg: [['retained by autonomous AI', D.aiInc / tot]], note: `Transfers = AI-owned income × (1 − autonomy × (1 − welfareShare × alignment − tax)); welfareShare = ${S.P.welfareShare} is a parameter, alignment ${pct(D.meanAlign)}, tax ${pct(D.taxRate)}.` }; },
+  machinePop: () => { const x = S.x, V = S.V, D = S.D; const m = new Map(); const add = (l, v) => m.set(l, (m.get(l) || 0) + v);
+    const C = D.Ctot || 1;
+    for (const [l, v] of flowTerms((k) => k >= V.comp && k < V.comp + NR)) add('compute: ' + l, v / C);
+    for (const [l, v] of flowTerms((k) => k === V.orb)) add('orbital compute: ' + l, v / Math.max(x[V.orb], 1) * D.offworldFrac);
+    for (const [l, v] of flowTerms((k) => k === V.deploy)) add('deployment: ' + l, v / Math.max(x[V.deploy], 1e-9));
+    for (const [l, v] of flowTerms((k) => k === V.alg)) add('algorithms (cheaper inference): ' + l, v * 0.7 * (1 - S.P.infFlopsMin / D.infFlops));
+    return derivedResult('Machine population (AI worker-equivalents)', D.M, 'worker-eq', m, `M = inference compute × deployment × quality / FLOP-per-worker; relative rates in %/yr. Quality ${fmt(D.q, 3)}, FLOP/s per worker ${fmt(D.infFlops)}.`, true); },
+  co2: () => { const V = S.V, x = S.x; const m = new Map();
+    for (const [l, v] of flowTerms((k) => k === V.co2n, () => x[V.co2n])) m.set('natural: ' + l, v);
+    for (const [l, v] of flowTerms((k) => k === V.co2x)) m.set('fossil excess: ' + l, (m.get('fossil excess: ' + l) || 0) + v);
+    return derivedResult('Atmospheric CO₂', x[V.co2n] + x[V.co2x], '× pre-industrial', m, 'Natural CO₂ (outgassing vs weathering thermostat) plus the fossil excess (combustion vs ocean/rock uptake).'); },
+  fossil: () => { const V = S.V, x = S.x, D = S.D; const m = flowTerms((k) => k >= V.fosCap && k < V.fosCap + NR, (k) => D.fosTWr[k - V.fosCap] / Math.max(x[k], 1e-12));
+    return derivedResult('Fossil energy use', D.fossilTW, 'TW', m, 'Usable output of fossil capacity; extraction is limited to 1/30 of the remaining reserve per year and needs engines to be useful.'); },
+  authority: () => { const m = O.m, x = S.x, V = S.V;
+    return { label: 'Human authority index (derived)', value: m.humanAuthority, unit: 'index', rate: null, upstream: true, logRate: true,
+      pos: WL.explain(S, 'reg').pos.map((t) => ['regulation: ' + t[0], t[1] / Math.max(x[V.reg], 1e-9)]), neg: WL.explain(S, 'auton').pos.map((t) => ['autonomy: ' + t[0], -t[1] / Math.max(x[V.auton], 1e-9)]),
+      note: '= (1 − autonomy) × (0.5 + 0.5 × regulation). A display index, not a state variable; drivers are relative rates of autonomy and regulation.' }; },
+  lineages: () => { const x = S.x, V = S.V, D = S.D; const rows = [];
+    for (let i = 0; i < NL; i++) if (x[V.lAct + i] > 0.5) rows.push([`lineage ${i}: share ${pct(x[V.lS + i])}, alignment ${pct(x[V.lA + i])}, edge ${fmt(x[V.lM + i], 2)}`, x[V.lS + i]]);
+    rows.sort((a, b) => b[1] - a[1]);
+    return { label: 'AI lineages (composition)', value: O.m.lineages, unit: 'active', rate: null, upstream: true, pos: rows, neg: [],
+      note: `HHI ${fmt(O.m.hhi, 2)}; conflict ${pct(D.machConflict)} = ${S.P.conflictK} × Σ sᵢsⱼ·divergence × scarcity (${fmt(D.scarcity, 2)}) × autonomy × (1 − alignment/2). Lineages branch (hazard ${fmt(D.branchHaz, 2)}/yr), merge, and die out below 0.01 % share; the array holds at most 12.` }; },
+  gcomm: () => { const V = S.V, x = S.x; const pw = S.D.popTot || 1;
+    const m = flowTerms((k) => k >= V.A && k < V.A + NR * ND && (k - V.A) % ND === 4, (k) => x[V.pop + Math.floor((k - V.A) / ND)] / pw);
+    return derivedResult('Global communication integration', S.D.gcomm, 'share', m, 'gcomm = 1 − exp(−(population-weighted ln communication technology / 3.5)²); causes are the rates of communication technology (relative, %/yr).', true); },
+  kappa: () => {
+    // κ = log10(training share × total compute × quarter-year × algorithmic efficiency × lead lineage terms)
+    const terms = new Map(); const add = (l, v) => terms.set(l, (terms.get(l) || 0) + v);
+    const a = WL.explain(S, 'alg'); for (const [l, v] of a.pos.concat(a.neg)) add('algorithms: ' + l, v / Math.LN10);
+    const c = WL.explain(S, 'comp'); const C = c.value || 1; for (const [l, v] of c.pos.concat(c.neg)) add('Earth compute: ' + l, v / C * (1 - S.D.offworldFrac) / Math.LN10);
+    const tr = WL.explain(S, 'train'); const Tr = S.x[S.V.train]; for (const [l, v] of tr.pos.concat(tr.neg)) add('training share: ' + l, v / Tr / Math.LN10);
+    const o = WL.explain(S, 'orb'); if (S.D.offworldFrac > 0) for (const [l, v] of o.pos.concat(o.neg)) add('orbital compute: ' + l, v / Math.max(S.x[S.V.orb], 1) * S.D.offworldFrac / Math.LN10);
+    const list = [...terms.entries()]; const rate = list.reduce((s, t) => s + t[1], 0);
+    return { label: 'AI capability κ (log₁₀ effective training FLOP)', value: S.D.kappa, unit: 'log₁₀ FLOP', rate, pos: list.filter((t) => t[1] > 0).sort((p, q) => q[1] - p[1]), neg: list.filter((t) => t[1] < 0).sort((p, q) => p[1] - q[1]), logRate: false,
+      note: `Capability rises only through compute (investment, fabs), algorithms (research, bounded by experiment compute) and the share of compute used for training. Task coverage τ = ${pct(S.D.tau)}; quality multiplier ${fmt(S.D.q, 3)}.` };
+  },
+};
+for (const k of ['D1', 'D2', 'D3', 'D4', 'D5', 'D6']) DERIVED[k] = () => {
+  const D = S.D, m = O.m, x = S.x, V = S.V;
+  const notes = {
+    D1: `= Σ regions min(AI/(humans+AI), τ) + AI's clumsy share of uncovered tasks, weighted by cognitive income. AI workers ${fmt(D.M)} vs human cognitive workers ${fmt(D.Hcog)}; coverage τ ${pct(D.tau)}; deployment ${pct(x[V.deploy])}.`,
+    D2: `= AI research effort × quality ${fmt(D.q, 3)} / (that + human research effort). Human researchers ${fmt(D.researchers)}.`,
+    D3: `= AI-owned share ω ${pct(x[V.omega])} + (1−ω) × delegated ${pct(x[V.deleg])}. Delegation needs autonomy; ownership grows only via autonomous reinvestment.`,
+    D4: `= autonomy ${pct(x[V.auton])} × √(D1 × D5): machines doing the operating work, acting without per-decision authorisation. The model does not separate infrastructure from other capital.`,
+    D5: `= robot share of physical work value. Robots ${fmt(D.robTot)} (heat factor ${fmt(D.machineHeat, 2)}).`,
+    D6: `= (AI-financed share of investment ${pct(D.invTot > 0 ? D.invAI / D.invTot : 0)}) × D1 × D5: new capital both financed by AI-controlled income and built by machine labour.`,
+  };
+  const src = { D1: ['deploy', 'alg', 'comp'], D2: ['alg', 'deploy'], D3: ['omega', 'deleg', 'auton'], D4: ['auton', 'rob'], D5: ['rob'], D6: ['omega', 'rob'] }[k];
+  const pos = [], neg = [];
+  for (const nm of src) { const e = WL.explain(S, nm); if (!e) continue; const sc = e.logRate ? 1 : 1 / Math.max(Math.abs(e.value), 1e-12);   // all as relative rates
+    for (const t of e.pos.slice(0, 2)) pos.push([nm + ': ' + t[0], t[1] * sc]); for (const t of e.neg.slice(0, 2)) neg.push([nm + ': ' + t[0], t[1] * sc]); }
+  return { label: TK.find((t) => t[0] === k)[1] + ' (' + k + ')', value: m[k], unit: 'share', rate: null, pos, neg, note: notes[k] + ' Drivers shown as relative rates of the underlying state variables (%/yr).', upstream: true, logRate: true };
+};
+function renderExplain() {
+  if (!S) return;
+  const e = DERIVED[selected] ? DERIVED[selected]() : WL.explain(S, selected);
+  if (!e) { $('explain').innerHTML = '<span class="note">no data</span>'; return; }
+  if (e.rate == null && typeof e.value === 'number') {   // rate from the sampled history (finite difference)
+    const key = { D1: 'D1', D2: 'D2', D3: 'D3', D4: 'D4', D5: 'D5', D6: 'D6', humanShare: 'H', authority: 'auth' }[selected];
+    if (key && samples.length > 2) { const a = samples[samples.length - 1], b = samples.find((q) => q.t >= a.t - Math.max(1, S.lastDt * 5)) || samples[samples.length - 2];
+      if (a.t > b.t) { e.rate = (a[key] - b[key]) / (a.t - b.t); e.rateNote = ' (finite difference of sampled history)'; e.logRate = false; } } }
+  const unitRate = e.logRate ? '%/yr' : (e.unit ? e.unit + '/yr' : '/yr');
+  const sc = e.logRate ? 100 : 1;
+  const row = (t, cls) => `<tr><td>${cls === 'pos' ? '+' : '−'} ${t[0]}</td><td class="${cls}">${fmt(Math.abs(t[1]) * sc, 3)}</td></tr>`;
+  $('explain').innerHTML = `<div class="lbl">${e.label}</div><div class="val">${fmt(e.value, 4)} <span class="note">${e.unit || ''}</span></div>` +
+    (e.rate != null ? `<div>rate of change: <b>${fmt(e.rate * sc, 3)}</b> ${unitRate}${e.logRate ? ' (relative)' : ''}${e.rateNote || ''}</div>` : '') +
+    `<div class="lbl" style="margin-top:5px">${e.upstream ? 'upstream drivers (rates)' : 'top positive causes'}</div><table>${e.pos.slice(0, 6).map((t) => row(t, 'pos')).join('') || '<tr><td class="note">none</td></tr>'}</table>` +
+    `<div class="lbl" style="margin-top:5px">${e.upstream ? '' : 'top negative causes'}</div><table>${e.neg.slice(0, 6).map((t) => row(t, 'neg')).join('') || '<tr><td class="note">none</td></tr>'}</table>` +
+    (e.note ? `<div class="note" style="margin-top:5px">${e.note}</div>` : '<div class="note" style="margin-top:5px">Terms are the literal rate contributions summed by the world rules this step (regional variables aggregated).</div>');
+}
+function updateHistory() {
+  const evs = O.events; const n = $('history').childElementCount;
+  if (evs.length > n) {
+    let html = '';
+    for (let i = evs.length - 1; i >= n; i--) {
+      const e = evs[i]; const zc = O.fired.evidenceEnds != null && e.t >= O.fired.evidenceEnds ? (zoneTimes.speculative != null && e.t >= zoneTimes.speculative ? 'zone-spec' : 'zone-cal') : 'zone-obs';
+      html += `<div class="ev"><span class="t">${timeLabel(e.t)}</span> · <span class="${zc}">${e.msg}</span></div>`;
+      audio.onDetector(e.id);
+      if (e.id === 'evidenceEnds') { bannerUntil = performance.now() + 9000; }
+    }
+    $('history').insertAdjacentHTML('afterbegin', html);
+    $('histCount').textContent = evs.length + ' events';
+  }
+  const b = $('banner');
+  if (O.h.evidenceEnded && (!O.h.speculative || performance.now() < bannerUntil)) { b.style.display = 'block'; b.innerHTML = 'HISTORICAL EVIDENCE ENDS.<br>SIMULATION CONTINUES FROM MODEL ASSUMPTIONS.'; } else b.style.display = 'none';
+  // stochastic simulation events (eventLog) → audio only
+  const log = S.eventLog; for (let i = lastEventLog; i < log.length; i++) audio.onSimEvent(log[i][0]); lastEventLog = log.length;
+}
+
+/* ---------------- legend & about ---------------- */
+function buildLegend() {
+  const rows = [
+    ['#0e3a5c', 'ocean: hue = temperature, green tint = marine productivity'], ['#e1ebf5', 'ice: polar area = ice-cover state'], ['#e65a1e', 'glow: surface above boiling (early Earth / extreme heat)'],
+    ['#26602c', 'land green = land biomass × natural land share'], ['#96804a', 'ochre = farmland fraction of region'], ['#6e6e73', 'grey = built-up (urban share)'],
+    ['#785aaa', 'violet land = machine energy/robot land use'], ['#ffb547', 'amber disc = city; radius ∝ log regional output'], ['#d6f0ff', 'blue-white square = compute hardware; size ∝ log FLOP/s'],
+    ['#b58cff', 'violet hexagon = robot stock; size ∝ log count'], ['#5fd4ff', 'cyan arcs = knowledge-diffusion links (land borders, seafaring, telecom); opacity = global communication; moving dots = diffusion (no trade is modelled)'],
+    ['#ffcf8a', 'night lights = energy use per area; amber→blue-white = machine share of work'], ['#9ab8ff', 'halo = atmosphere: blue ∝ O₂, orange ∝ heat'],
+    ['#eaf6ff', 'orbital ring dots ∝ log off-world industrial capital'], ['#b58cff', 'outer swarm ∝ log energy captured off-world'],
+    ['#8c78ff', 'coloured arcs = AI lineages: angle = goal orientation, length = compute share, hue = alignment (violet low → green high)'],
+    ['#ff5d6c', 'red rings/specks = human conflict / machine conflict'],
+  ];
+  rows.push(['#26394d', 'globe rotation and dot speed are visual only']);
+  $('legend').innerHTML = rows.map(([c, t]) => `<div class="row"><span class="sw" style="background:${c}"></span><span>${t}</span></div>`).join('');
+  $('about').innerHTML = `Rules in <code>// === WORLD RULES ===</code> compute rates from state; an adaptive integrator picks the time step from those rates (Myr in deep time, weeks during the AI transition). No rule reads the date. Transitions — life, agriculture, industry, computation, AI dominance — are labelled by detectors that only observe state. Mechanisms: climate/carbon/oxygen cycles, evolving traits, Malthusian demography with a demographic transition, induced innovation across 9 technology domains with diffusion, power-per-worker industrialisation, energy/material/heat limits, chip-fab and launch bottlenecks, task-based automation, AI lineages with alignment and conflict. Toggle mechanisms and restart to compare counterfactual worldlines. The future portion is speculative.`;
+}
+
+/* ---------------- audio: every sound corresponds to state or an event ---------------- */
+const audio = (() => {
+  const MAX_VOICES = 24; let ctx = null, master = null, comp = null, analyser = null, voices = 0, maxVoices = 0, peak = 0, muted = false, vol = 0.5;
+  const lastAt = {}; let windowStart = 0, windowCount = 0; let drone = null;
+  function init() {
+    if (ctx) { resume(); return; }
+    const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return;
+    ctx = new AC(); comp = ctx.createDynamicsCompressor(); comp.threshold.value = -18; comp.ratio.value = 6; comp.knee.value = 12;
+    master = ctx.createGain(); master.gain.value = vol * 0.5; master.connect(comp);
+    const lim = ctx.createDynamicsCompressor(); lim.threshold.value = -3; lim.knee.value = 0; lim.ratio.value = 20; lim.attack.value = 0.001; lim.release.value = 0.05;
+    comp.connect(lim); lim.connect(ctx.destination); comp = lim;                     // limiter before the output: no clipping
+    analyser = ctx.createAnalyser(); analyser.fftSize = 2048; comp.connect(analyser);   // inspection only
+    // city harmonic: low drone whose loudness tracks urban population (2 persistent voices)
+    drone = { g: ctx.createGain(), o1: ctx.createOscillator(), o2: ctx.createOscillator() };
+    drone.g.gain.value = 0; drone.o1.frequency.value = 55; drone.o2.frequency.value = 82.5; drone.o2.type = 'triangle';
+    drone.o1.connect(drone.g); drone.o2.connect(drone.g); drone.g.connect(master); drone.o1.start(); drone.o2.start(); voices += 2;
+  }
+  function resume() { if (ctx && ctx.state === 'suspended') ctx.resume(); }
+  function setVolume(v) { vol = v; if (master) master.gain.setTargetAtTime(muted ? 0 : v * 0.5, ctx.currentTime, 0.05); }
+  function toggleMute() { muted = !muted; setVolume(vol); }
+  function allow(type, minGap) {
+    if (!ctx || muted || ctx.state !== 'running' || voices >= MAX_VOICES) return false;
+    const now = ctx.currentTime;
+    if (now - (lastAt[type] || -9) < minGap) return false;
+    if (now - windowStart > 1) { windowStart = now; windowCount = 0; }
+    if (windowCount >= 14) return false;               // global rate limit: 14 new voices per second
+    lastAt[type] = now; windowCount++; return true;
+  }
+  // a "voice" is one sounding source (oscillator or noise buffer); requests beyond the cap are dropped
+  function voice(dur, build, sources = 1) {
+    if (voices + sources > MAX_VOICES) return;
+    voices += sources; maxVoices = Math.max(maxVoices, voices); const t = ctx.currentTime; const g = ctx.createGain(); g.connect(master);
+    const end = build(g, t); const stopAt = t + dur + 0.05;
+    (Array.isArray(end) ? end : [end]).forEach((n) => { n.start(t); n.stop(stopAt); });
+    setTimeout(() => { voices -= sources; try { g.disconnect(); } catch (_) {} }, (dur + 0.2) * 1000);
+  }
+  let noiseBuf = null;
+  function noise() { if (!noiseBuf) { noiseBuf = ctx.createBuffer(1, ctx.sampleRate * 1.5, ctx.sampleRate); const d = noiseBuf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1; } const s = ctx.createBufferSource(); s.buffer = noiseBuf; return s; }
+  const env = (g, t, a, peak, d) => { g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(peak, t + a); g.gain.exponentialRampToValueAtTime(1e-4, t + a + d); };
+  function play(type, p = {}) {
+    switch (type) {
+      case 'bio': if (!allow(type, 0.12)) return; voice(0.12, (g, t) => { const n = noise(), f = ctx.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = 400 + 1200 * (p.div || 0.3); f.Q.value = 6; n.connect(f); f.connect(g); env(g, t, 0.01, 0.12, 0.09); return n; }); break;
+      case 'industry': if (!allow(type, 0.16)) return; voice(0.1, (g, t) => { const n = noise(), f = ctx.createBiquadFilter(); f.type = 'highpass'; f.frequency.value = 2500; n.connect(f); f.connect(g); env(g, t, 0.002, 0.10, 0.06); return n; }); break;
+      case 'comm': if (!allow(type, 0.2)) return; voice(0.09, (g, t) => { const o = ctx.createOscillator(); o.frequency.setValueAtTime(1800, t); o.frequency.exponentialRampToValueAtTime(3200, t + 0.06); o.connect(g); env(g, t, 0.003, 0.05, 0.07); return o; }); break;
+      case 'compute': if (!allow(type, 0.09)) return; voice(0.05, (g, t) => { const o = ctx.createOscillator(); o.type = 'square'; o.frequency.value = 600 + 300 * Math.floor(Math.random() * 6); o.connect(g); env(g, t, 0.002, 0.025, 0.04); return o; }); break;
+      case 'transition': if (!allow(type, 1.2)) return; voice(3.2, (g, t) => { const base = p.f || 110; const os = [1, 1.5, 2.0, 2.5].map((r) => { const o = ctx.createOscillator(); o.type = 'sine'; o.frequency.value = base * r; o.connect(g); return o; }); env(g, t, 0.4, 0.13, 2.7); return os; }, 4); break;
+      case 'launch': if (!allow(type, 1.5)) return; voice(1.6, (g, t) => { const n = noise(), f = ctx.createBiquadFilter(); f.type = 'lowpass'; f.frequency.setValueAtTime(150, t); f.frequency.exponentialRampToValueAtTime(4000, t + 1.4); n.connect(f); f.connect(g); env(g, t, 0.05, 0.16, 1.4); return n; }); break;
+      case 'replicate': if (!allow(type, 0.8)) return; voice(0.6, (g, t) => { const o = ctx.createOscillator(); o.type = 'triangle'; const b = 330 * Math.pow(2, (p.i || 0) / 12);
+        o.frequency.setValueAtTime(b, t); o.frequency.setValueAtTime(b * 1.5, t + 0.15); o.frequency.setValueAtTime(b * 2, t + 0.3); o.connect(g); env(g, t, 0.01, 0.07, 0.5); return o; }); break;
+      case 'thud': if (!allow(type, 0.6)) return; voice(0.7, (g, t) => { const o = ctx.createOscillator(); o.frequency.setValueAtTime(90, t); o.frequency.exponentialRampToValueAtTime(35, t + 0.6); o.connect(g); env(g, t, 0.005, 0.18, 0.6); return o; }); break;
+    }
+  }
+  // continuous layers: probabilities per frame derived from state
+  function update(dtw) {
+    if (!ctx || muted || !S) return;
+    measure();
+    const m = O.m, D = S.D;
+    if (drone) drone.g.gain.setTargetAtTime(0.05 * clamp(m.urban * 3, 0, 1) * sat(m.pop, 1e8), ctx.currentTime, 0.3);
+    const rate = (r) => Math.random() < r * dtw;           // audio-only randomness (never touches the simulation)
+    if (m.alive > 0.5 && rate(0.5 + 3 * sat(m.bio, 0.5))) play('bio', { div: clamp(S.x[S.V.div] / 20, 0, 1) });
+    if (rate(6 * sat(m.fossilTW + m.cleanTW, 3))) play('industry');
+    if (rate(4 * m.gcomm * sat(m.pop, 1e7))) play('comm');
+    if (m.compute > 1e9 && rate(Math.min(8, (Math.log10(m.compute) - 8) / 3))) play('compute');
+  }
+  function onDetector(id) {
+    const m = O.m; const f = 110 * Math.pow(2, ((m.D1 + m.D2 + m.D3 + m.D4) / 4) * 1.5);
+    if (/^D[1-6]$|takeover|evidenceEnds|bioVsMachine/.test(id)) play('transition', { f });
+    else if (id === 'orbital' || id === 'offworld50') play('launch');
+    else if (id === 'life' || id === 'farming' || id === 'cities') play('transition', { f: 82.5 });
+  }
+  function onSimEvent(kind) {
+    if (kind === 'lineage-branch') play('replicate', { i: O.m.lineages });
+    else if (kind === 'extinction' || kind === 'epidemic' || kind === 'incident') play('thud');
+  }
+  function measure() { if (!analyser) return 0; const b = new Float32Array(analyser.fftSize); analyser.getFloatTimeDomainData(b); for (const v of b) peak = Math.max(peak, Math.abs(v)); return peak; }
+  return { init, resume, setVolume, toggleMute, update, onDetector, onSimEvent, measure, get ready() { return !!ctx; }, get muted() { return muted; },
+    get stats() { return { voices, maxVoices, peak, state: ctx ? ctx.state : 'none', limit: MAX_VOICES }; } };
+})();
+
+/* ---------------- main loop (simulation and rendering run at separate rates) ---------------- */
+let lastFrame = performance.now(), stepDebt = 0, panelT = 0;
+function frame(now) {
+  const dtw = Math.min(0.1, (now - lastFrame) / 1000); lastFrame = now; frames++;
+  if (now - secT >= 1000) { fps = frames * 1000 / (now - secT); stepsPerSec = stepsThisSecond * 1000 / (now - secT); yearsPerSec = yearsThisSecond * 1000 / (now - secT); frames = 0; stepsThisSecond = 0; yearsThisSecond = 0; secT = now; }
+  if (running && S) {
+    if (maxMode) { const t0 = performance.now(); do { stepSim(40); } while (performance.now() - t0 < 11 && running); }
+    else { stepDebt += speed * 30 * dtw; const n = Math.floor(stepDebt); stepDebt -= n; if (n > 0) stepSim(Math.min(n, 4000)); }
+  }
+  if (S && O.m) {
+    sample(false); drawStage(now); drawChart(); updateTimeText(); updateHistory(); audio.update(dtw);
+    if (now - panelT > 200) { updatePanels(); panelT = now; }
+  }
+  requestAnimationFrame(frame);
+}
+function fitCanvas() {
+  const st = $('stage'); const w = Math.max(320, Math.min(1400, st.clientWidth)); cv.width = Math.round(w); cv.height = Math.round(w * 0.625); proj = null;
+  const ch = $('chart'); ch.width = Math.max(320, ch.clientWidth); ch.height = 190;
+}
+window.addEventListener('resize', fitCanvas);
+buildControls(); buildLegend(); newWorld(); fitCanvas();
+// expose read-only handles for automated inspection (screenshots, FPS, determinism in-browser)
+window.__worldline = { get S() { return S; }, get O() { return O; }, setSpeed(v) { maxMode = v === 'max'; speed = maxMode ? 1 : v; running = true; refreshButtons(); }, setZoom(z) { zoom = z; refreshButtons(); }, get fps() { return fps; }, get stepsPerSec() { return stepsPerSec; }, get audio() { return audio.stats; }, enableAudio() { audio.init(); refreshButtons(); }, newWorld };
+requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
